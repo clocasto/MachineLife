@@ -1,48 +1,25 @@
-var WorldGrid = function(dimension) {
+var express = require('express');
+var morgan = require('morgan');
+var chalk = require('chalk');
+var swig = require('swig');
+var app = express();
 
-    var world = worldArray(dimension);
 
-    function worldArray(size) {
-        var returnObj = {};
-        for (var i = 0; i < size; i++) {
-            for (var j = 0; j < size; j++) {
-                returnObj[String(i) + String(j)] = 0;
-            }
-        }
+app.set('views', './views');
+app.set('view engine', 'html');
+app.engine('html', swig.renderFile);
+swig.setDefaults({
+    cache: false
+});
 
-        return returnObj;
-    }
+app.use(morgan('dev'));
+app.use(express.static(__dirname + '/public'));
 
-    function boardMaker(gridObject) {
-        var boardTableBody = document.createElement('tbody');
-        var boardTableHTML = '';
+app.get('/', function(req, res, next) {
+    res.render(__dirname + '/index.html');
+});
 
-        for (var i = 0; i < dimension; i++) {
-            boardTableHTML += '<tr>';
-            for (var j = 0; j < dimension; j++) {
-                boardTableHTML += '<td id="' + String(i) + String(j) + '" class="tile ' + world[String(i) + String(j)] + '"></td>';
-            }
-            boardTableHTML += '</tr>';
-        }
-        boardTableBody.innerHTML = boardTableHTML;
-        var boardTable = document.getElementById('gameboard');
-        boardTable.appendChild(boardTableBody);
-    }
-
-    function updateWorldAtCell(value, x, y) {
-
-        function updateGameBoardAtCell() {
-            document.getElementById(String(x) + String(y)).className = 'tile ' + String(value);
-        }
-
-        world[String(x) + String(y)] = value;
-        updateGameBoardAtCell();
-    }
-
-    boardMaker();
-
-    updateWorldAtCell('on',5,5);
-
-};
-
-var game = new WorldGrid(20);
+var server = app.listen(3000, function(err) {
+    if (err) throw err;
+    console.log(chalk.green('Now listening on port 3000.'));
+});

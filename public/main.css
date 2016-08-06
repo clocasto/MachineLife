@@ -3,7 +3,7 @@
 }
 
 #gameboard .tile {
-	border: 1px solid #999999;
+	border: 1px solid #CCCCCC;
 	border-radius: 3px;
 	height: 5px;
 	width: 5px;
@@ -13,4 +13,8 @@
 
 .on {
 	background-color: royalblue;
+}
+
+.plant {
+	background-color: green;
 }
