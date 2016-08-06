@@ -3,7 +3,7 @@ var morgan = require('morgan');
 var chalk = require('chalk');
 var swig = require('swig');
 var app = express();
-
+var ngrok = require('ngrok');
 
 app.set('views', './views');
 app.set('view engine', 'html');
@@ -22,4 +22,9 @@ app.get('/', function(req, res, next) {
 var server = app.listen(3000, function(err) {
     if (err) throw err;
     console.log(chalk.green('Now listening on port 3000.'));
+});
+
+ngrok.connect(3000,function(err,url) {
+	if (err) throw err;
+	console.log(url);
 });

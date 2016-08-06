@@ -1,3 +1,5 @@
+'use strict'
+
 function randNum(max) {
     return Math.floor(Math.random() * max);
 }
@@ -14,17 +16,23 @@ var WorldGrid = function(dimension) {
     this.player = new Player(dimension, 20);
     this.world = this.worldArray(dimension);
     this.boardMaker(dimension);
-    this.plants = []; //THIS NEEDS TO BE AN OBJECT SO I KNOW WHICH PLANT TO REMOVE
+    this.plants = {};
     this.step();
 
-    setInterval(function() {this.addPlant()}.bind(this), 500);
+    setInterval(function() {
+        this.addPlant();
+    }.bind(this), 1000);
 
     document.addEventListener('keydown', function(event) {
         this.updateWorldAtCell('off', this.player.x, this.player.y);
         // debugger;
         this.player.keyMap(event.keyCode);
         this.updateWorldAtCell('on', this.player.x, this.player.y);
-        // debugger;
+        var playerLoc = this.cellLoc(this.player.x, this.player.y);
+        if (this.plants.hasOwnProperty(playerLoc))
+            this.player.score += this.plants[playerLoc].worth;
+        delete this.plants[playerLoc];
+        document.getElementById('score').textContent = String(this.player.score);
     }.bind(this));
 
 };
@@ -34,8 +42,8 @@ WorldGrid.prototype.step = function() {
 };
 
 WorldGrid.prototype.updateWorldAtCell = function(value, x, y) {
-    this.world[this.stringify(x) + this.stringify(y)] = value;
-    document.getElementById(this.stringify(x) + this.stringify(y)).className = 'tile ' + String(value);
+    this.world[this.cellLoc(x, y)] = value;
+    document.getElementById(this.cellLoc(x, y)).className = 'tile ' + String(value);
     return [x, y];
 };
 
@@ -46,7 +54,7 @@ WorldGrid.prototype.boardMaker = function(dimension) {
     for (var i = 0; i < dimension; i++) {
         boardTableHTML += '<tr>';
         for (var j = 0; j < dimension; j++) {
-            boardTableHTML += '<td id="' + this.stringify(j) + this.stringify(i) + '" class="tile ' + this.world[this.stringify(j) + this.stringify(i)] + '"></td>';
+            boardTableHTML += '<td id="' + this.cellLoc(j, i) + '" class="tile ' + this.world[this.cellLoc(j, i)] + '"></td>';
         }
         boardTableHTML += '</tr>';
     }
@@ -59,29 +67,33 @@ WorldGrid.prototype.worldArray = function(size) {
     var returnObj = {};
     for (var i = 0; i < size; i++) {
         for (var j = 0; j < size; j++) {
-            returnObj[this.stringify(i) + this.stringify(j)] = 0;
+            returnObj[this.cellLoc(j, i)] = 0;
         }
     }
 
     return returnObj;
 };
 
-WorldGrid.prototype.stringify = function(num) {
-    num = num.toString().split('');
-    while (num.length < this.dimension.toString().length) {
-        num.unshift('0');
+WorldGrid.prototype.cellLoc = function(x, y) {
+    function stringify(num) {
+        num = num.toString().split('');
+        while (num.length < this.dimension.toString().length) {
+            num.unshift('0');
+        }
+        return num.join('');
     }
-    return num.join('');
+
+    return stringify.bind(this)(x) + stringify.bind(this)(y);
+
 };
 
 WorldGrid.prototype.addPlant = function() {
-    var plantToAdd = new Plant(this.dimension);
-    if (this.plants.some(function(plant) {
-        return this.stringify(plant.x) + this.stringify(plant.y) === this.stringify(plantToAdd.x) + this.stringify(plantToAdd.y)
-    }.bind(this))) {
+    var plantToAdd = new Plant(this.dimension),
+        plantCoordinates = this.cellLoc(plantToAdd.x, plantToAdd.y)
+    if (this.plants.hasOwnProperty(this.cellLoc(plantToAdd.x, plantToAdd.y))) {
         return;
     }
-    this.plants.push(plantToAdd);
+    this.plants[plantCoordinates] = plantToAdd;
     this.updateWorldAtCell('plant', plantToAdd.x, plantToAdd.y);
 };
 
@@ -137,10 +149,5 @@ function Plant(worldSize) {
     this.y = randNum(worldSize);
     console.log('added plant');
 }
-
-
-
-
-
 
 var game = new WorldGrid(20);
