@@ -21,10 +21,10 @@ app.get('/', function(req, res, next) {
 
 var server = app.listen(3000, function(err) {
     if (err) throw err;
-    console.log(chalk.green('Now listening on port 3000.'));
+    console.log(chalk.yellow('Now listening:'), '3000');
 });
 
 ngrok.connect(3000,function(err,url) {
 	if (err) throw err;
-	console.log(url);
+	console.log(chalk.red('Internet Address:'),url);
 });

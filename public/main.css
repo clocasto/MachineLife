@@ -1,20 +1,48 @@
+body {
+	background-color: #fafafa;
+}
+.scoreboard {
+	text-align: center;
+	margin-top: 50px;
+	margin-bottom: 0px;
+}
 #gameboard {
-	margin: 10% auto 0 auto;
+	margin: 2% auto 0 auto;
 }
 
-#gameboard .tile {
+.tile {
 	border: 1px solid #CCCCCC;
 	border-radius: 3px;
-	height: 5px;
-	width: 5px;
-	margin: 0px;
-	padding: 5px;
+	box-shadow: 1px 1px 1px #acacac;
+	height: 7px;
+	width: 7px;
+	padding: 7px;
 }
-
 .on {
 	background-color: royalblue;
 }
 
-.plant {
-	background-color: green;
+.off {
+	background-color: white;
+}
+
+.one {
+	background-color: #e6ffe6;
+}
+
+.two {
+	background-color: #4dff4d;
+}
+
+.three {
+	background-color: #006600;
+	border: 1px solid gold;
+
+} 
+.four {
+	background-color:  #003300;
+}
+
+.five {
+	background-color: #4d0000;
 }
