@@ -6,27 +6,27 @@ var Player = require('./player');
 var WorldGrid = function(dimension) {
 
     this.dimension = dimension;
-    this.player = new Player(dimension, 20);
+    this.player = new Player(dimension, 5);
     this.world = this.worldArray(dimension);
     this.boardMaker(dimension);
     this.plants = {};
-    // this.moveState = false;
     this.step();
 
     setInterval(function() {
-        this.step();
+        if (this.player.health-- > 0) {
+            this.step();
+        } else return;
     }.bind(this), 1000);
 
     document.addEventListener('keydown', function(event) {
-        // if (this.moveState) return;
         this.updateWorldAtCell('off', this.player.x, this.player.y);
         this.player.keyMap(event.keyCode);
         this.updateWorldAtCell('on', this.player.x, this.player.y);
         var playerLoc = this.cellLoc(this.player.x, this.player.y);
         if (this.plants.hasOwnProperty(playerLoc)) {
             this.player.score += this.plants[playerLoc].reap();
+            this.player.health++;
             delete this.plants[playerLoc];
-
         }
         document.getElementById('score').textContent = String(this.player.score);
         this.moveState = true;
@@ -36,9 +36,10 @@ var WorldGrid = function(dimension) {
 
 WorldGrid.prototype.step = function() {
     this.updateWorldAtCell('on', this.player.x, this.player.y);
-    this.addPlants(10);
+    this.addPlants(8);
     this.agePlants();
-    this.query();
+    // this.query();
+    document.getElementById('health').textContent = String(this.player.health);
 };
 
 WorldGrid.prototype.updateWorldAtCell = function(value, x, y) {
@@ -116,7 +117,7 @@ WorldGrid.prototype.query = function() {
     console.log(this.world);
 }
 
-var game = new WorldGrid(5);
+var game = new WorldGrid(10);
 
 module.exports = WorldGrid;
 },{"./plant.js":2,"./player":3}],2:[function(require,module,exports){

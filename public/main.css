@@ -9,14 +9,13 @@ body {
 #gameboard {
 	margin: 2% auto 0 auto;
 }
-
 .tile {
 	border: 1px solid #CCCCCC;
 	border-radius: 3px;
 	box-shadow: 1px 1px 1px #acacac;
-	height: 7px;
-	width: 7px;
-	padding: 7px;
+	height: 10px;
+	width: 10px;
+	padding: 10px;
 }
 .on {
 	background-color: royalblue;
@@ -31,7 +30,7 @@ body {
 }
 
 .two {
-	background-color: #4dff4d;
+	background-color: #66ff66;
 }
 
 .three {
