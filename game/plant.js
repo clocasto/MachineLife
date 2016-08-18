@@ -2,7 +2,7 @@
 var util = require('./utility');
 
 module.exports = function(worldSize, player) {
-
+    //constructor for each plant object.
     function Plant(worldSize) {
         this.x = util.randNum(worldSize);
         this.y = util.randNum(worldSize);
@@ -10,11 +10,11 @@ module.exports = function(worldSize, player) {
         this.age = 1;
         // console.log('added plant');
     }
-
+    //maximum age of 4
     Plant.prototype.ageOnce = function() {
         this.age = this.age > 4 ? 0 : this.age + 1;
     };
-
+    //worth is for score, reward is for deepqlearn.  need to decouple these.
     Plant.prototype.manual = {
         1: {
             class: 'one',
@@ -61,11 +61,11 @@ module.exports = function(worldSize, player) {
     Plant.prototype.getNutrition = function() {
         return this.manual[this.age].health;
     };
-
+    // returns its player score.
     Plant.prototype.reap = function() {
         return this.manual[this.age].worth;
     };
-
+    //returns deepqlearn reward or penalty.
     Plant.prototype.brainFood = function() {
         return this.manual[this.age].reward;
     };
@@ -74,15 +74,19 @@ module.exports = function(worldSize, player) {
     //
     //
 
-    function Garden(voracity) {
+    /**
+     * stepsToAge: how many steps it takes for a plant to age
+     */
+
+    function Garden(stepsToAge) {
         this.plants = {};
-        this.voracity = voracity;
+        this.stepsToAge = stepsToAge;
         this.tracker = 0;
     }
 
     Garden.prototype.season = function(num) {
 
-        if (this.tracker < this.voracity) {
+        if (this.tracker < this.stepsToAge) {
             this.tracker++;
         } else {
             this.tracker = 0;
@@ -118,12 +122,13 @@ module.exports = function(worldSize, player) {
         return this.plants.hasOwnProperty(coord);
     };
 
+
+    //Returns value, health, and reward, garbage collects a stepped-on plant
     Garden.prototype.trample = function(coord) {
-        //Returns points and garbage collects a stepped-on plant
         var plantWorth = this.plants[coord].reap();
         var plantReward = this.plants[coord].brainFood();
         var playerHealth = this.plants[coord].getNutrition();
-        this.root(coord);
+        this.delete(coord);
         return {
             value: plantWorth,
             health: playerHealth,
@@ -131,7 +136,7 @@ module.exports = function(worldSize, player) {
         };
     };
 
-    Garden.prototype.root = function(coord) {
+    Garden.prototype.delete = function(coord) {
         delete this.plants[coord];
     };
 
