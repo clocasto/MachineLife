@@ -15,7 +15,7 @@ module.exports = function(dim) {
         this.loc = util.location(10, this.x, this.y);
 
     };
-
+    //possible moves: up down left right
     Player.prototype.keyMap = function(code) {
         var keyMappings = {
             37: function() {
