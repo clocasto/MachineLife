@@ -14,17 +14,18 @@ swig.setDefaults({
 
 app.use(morgan('dev'));
 app.use(express.static(__dirname + '/public'));
+app.use('/jquery', express.static(__dirname + '/node_modules/jquery/dist'));
 
 app.get('/', function(req, res, next) {
-    res.render(__dirname + '/index.html');
+    res.render('index');
 });
 
-var server = app.listen(3000, function(err) {
+app.listen(3000, function(err) {
     if (err) throw err;
     console.log(chalk.yellow('Now listening:'), '3000');
 });
 
-ngrok.connect(3000,function(err,url) {
+ngrok.connect(3000, function(err, url) {
 	if (err) throw err;
-	console.log(chalk.red('Internet Address:'),url);
+	console.log(chalk.red('Internet Address:'), url);
 });

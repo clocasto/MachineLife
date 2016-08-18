@@ -18,32 +18,42 @@ module.exports = function(worldSize, player) {
     Plant.prototype.manual = {
         1: {
             class: 'one',
-            worth: 1
+            worth: 1,
+            health: 0
         },
         2: {
             class: 'two',
-            worth: 2
+            worth: 2,
+            health: 0
         },
         3: {
             class: 'three',
-            worth: 4
+            worth: 4,
+            health: 1
         },
         4: {
             class: 'four',
-            worth: 1
+            worth: 1,
+            health: 0
         },
         5: {
             class: 'five',
-            worth: -5
+            worth: -5,
+            health: -1
         },
         0: {
             class: 'off',
-            worth: 0
+            worth: 0,
+            health: 0
         }
     };
 
     Plant.prototype.getAge = function() {
         return this.manual[this.age].class;
+    };
+
+    Plant.prototype.getNutrition = function() {
+        return this.manual[this.age].health;
     };
 
     Plant.prototype.reap = function() {
@@ -92,8 +102,9 @@ module.exports = function(worldSize, player) {
     Garden.prototype.trample = function(coord) {
         //Returns points and garbage collects a stepped-on plant
         var plantWorth = this.plants[coord].reap();
+        var playerHealth = this.plants[coord].getNutrition();
         this.root(coord);
-        return plantWorth;
+        return {value: plantWorth, health: playerHealth};
     };
 
     Garden.prototype.root = function(coord) {
@@ -101,7 +112,7 @@ module.exports = function(worldSize, player) {
     };
 
     return {
-        Plant: Plant,
-        Garden: Garden
+        Plant,
+        Garden
     };
 };

@@ -1,0 +1,62 @@
+* {
+  box-sizing: border-box; }
+
+.navbar {
+  margin-bottom: 0; }
+
+.col-lg-8 {
+  padding: 0; }
+
+.on {
+  background-color: royalblue; }
+
+.off {
+  background-color: white; }
+
+.one {
+  background-color: #e6ffe6; }
+
+.two {
+  background-color: #66ff66; }
+
+.three {
+  background-color: #006600;
+  border: 1px solid gold; }
+
+.four {
+  background-color: #003300; }
+
+.five {
+  background-color: #4d0000; }
+
+body {
+  background-color: #fafafa; }
+
+.scoreboard {
+  text-align: center;
+  margin-top: 50px;
+  margin-bottom: 0px; }
+
+#gameboard {
+  margin: 0 auto; }
+
+.tile {
+  border: 1px solid #CCCCCC;
+  border-radius: 2px;
+  box-shadow: 1px 1px 1px #acacac;
+  width: 9.9vh;
+  height: 9.9vh;
+  /* Medium devices (desktops, 992px and up) */
+  /* Large devices (large desktops, 1200px and up) */ }
+  @media screen and (min-width: 768px) {
+    .tile {
+      width: 9.9vh;
+      height: 9.9vh; } }
+  @media screen and (min-width: 992px) {
+    .tile {
+      width: 9.9vh;
+      height: 9.9vh; } }
+  @media screen and (min-width: 1200px) {
+    .tile {
+      width: 9.9vh;
+      height: 9.9vh; } }

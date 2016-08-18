@@ -1,4 +1,5 @@
 'use strict';
+var util = require('./utility');
 
 module.exports = function(dim) {
 
@@ -8,6 +9,8 @@ module.exports = function(dim) {
         this.score = 0;
         this.x = 0;
         this.y = 0;
+        this.allowedMoves = [37, 38, 39, 40];
+        this.loc = util.location(10, this.x, this.y);
 
     };
 

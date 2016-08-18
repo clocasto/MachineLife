@@ -1,0 +1,54 @@
+* {
+  box-sizing: border-box;   
+}
+
+@import "_layout";
+@import "_plants";
+
+$xs-screen: 360px;
+$small-screen: 768px;
+$med-screen: 992px;
+$large-screen: 1200px;
+
+@mixin calcSize($screenSize) {
+	width: (99vh) * 0.10;
+	height: (99vh) * 0.10;
+}
+
+body {
+	background-color: #fafafa;
+}
+.scoreboard {
+	text-align: center;
+	margin-top: 50px;
+	margin-bottom: 0px;
+}
+#gameboard {
+	margin: 0 auto;
+}
+
+.tile {
+	border: 1px solid #CCCCCC;
+	border-radius: 2px;
+	box-shadow: 1px 1px 1px #acacac;
+
+	@include calcSize($xs-screen);
+
+	@media screen and (min-width: $small-screen) { 
+		@include calcSize($small-screen);
+	}
+
+	/* Medium devices (desktops, 992px and up) */
+	@media screen and (min-width: $med-screen) {
+		@include calcSize($med-screen);
+	}
+
+	/* Large devices (large desktops, 1200px and up) */
+	@media screen and (min-width: $large-screen) {
+		@include calcSize($large-screen);
+	}
+
+	
+
+}
+

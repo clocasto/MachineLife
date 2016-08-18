@@ -2,93 +2,107 @@
 var gardener = require('./plant.js');
 var entities = require('./player');
 var util = require('./utility');
+var creator = require('./world');
 
-var WorldGrid = function(dimension) {
+var Manager = function(dimension) {
 
-    this.dimension = dimension;
-    this.world = this.worldArray(dimension);
-    this.boardMaker(dimension);
+    this.size = dimension;
+
+    var World = creator(dimension);
+    this.world = new World();
 
     var Player = entities(dimension);
-    this.player = new Player(6);
+    this.player = new Player(5);
+
     var Garden = gardener(dimension, this.player).Garden;
     this.garden = new Garden();
 
+    var Brain = require('./neural');
+    this.brain = Brain(this.size);
+
+    console.log(this.brain);
+
+};
+
+Manager.prototype.start = function() {
     this.step();
+    this.observer();
+
     setInterval(function() {
-        if (this.player.health-- > 0) this.step();
-        return;
+        // if (this.player.health-- > 0) this.step();
+        // else {
+        //     this.quit();
+        // }
+        this.step();
     }.bind(this), 1000);
+};
+
+Manager.prototype.quit = function() {
+    for (var plot in this.garden.plants) {
+        this.world.draw('off', this.garden.plants[plot].x, this.garden.plants[plot].y);
+        this.garden.root(plot);
+    }
+};
+
+Manager.prototype.observer = function() {
 
     document.addEventListener('keydown', function(event) {
-        this.updateWorldAtCell('off', this.player.x, this.player.y);
-        this.player.keyMap(event.keyCode);
-        this.updateWorldAtCell('on', this.player.x, this.player.y);
-        var playerLoc = util.location(this.dimension, this.player.x, this.player.y);
+        this.movePlayer(event.keyCode);
+        var playerLoc = util.location(this.size, this.player.x, this.player.y);
         if (this.garden.hasPlant(playerLoc)) {
-            this.player.score += this.garden.trample(playerLoc);
-            this.player.health++;
+            this.award(this.garden.trample(playerLoc));
         }
-        document.getElementById('score').textContent = String(this.player.score);
     }.bind(this));
 
 };
 
-WorldGrid.prototype.step = function() {
-    this.updateWorldAtCell('on', this.player.x, this.player.y);
-    this.garden.season(8);
-    this.harvest();
-    // this.query();
-    document.getElementById('health').textContent = String(this.player.health);
+Manager.prototype.movePlayer = function(keyCode) {
+    if (this.player.allowedMoves.includes(keyCode)) {
+        this.world.draw('off', this.player.x, this.player.y);
+        this.player.keyMap(event.keyCode);
+        this.world.draw('on', this.player.x, this.player.y);
+    }
 };
 
-WorldGrid.prototype.harvest = function() {
+Manager.prototype.award = function(scoreObj) {
+    this.player.score += scoreObj.value;
+    this.player.health += scoreObj.health;
+    this.world.score(this.player.score, this.player.health);
+};
+
+Manager.prototype.step = function() {
+    this.world.draw('on', this.player.x, this.player.y);
+    this.garden.season(4);
+    this.harvest();
+    console.log('Move?', this.brain.forward(this.query()));
+    console.log('Reward:', this.world.world[this.player.loc]);
+    // this.brain.backward([Brain.rewardMe(this.world.world[this.player.loc])]);
+    this.world.score(this.player.score, this.player.health);
+};
+
+Manager.prototype.harvest = function() {
     for (var plot in this.garden.plants) {
         if (this.garden.plants.hasOwnProperty(plot)) {
             var plant = this.garden.plants[plot];
             if (plant.getAge() === 'off') this.garden.root(plant.coordinate);
-            this.updateWorldAtCell(plant.getAge(), plant.x, plant.y);
+            this.world.draw(plant.getAge(), plant.x, plant.y);
         }
     }
 };
 
-WorldGrid.prototype.updateWorldAtCell = function(value, x, y) {
-    this.world[util.location(this.dimension, x, y)] = value;
-    document.getElementById(util.location(this.dimension, x, y)).className = 'tile ' + String(value);
-    return [x, y];
-};
+Manager.prototype.viewWorld = function() {};
 
-WorldGrid.prototype.boardMaker = function(dimension) {
-    var boardTableBody = document.createElement('tbody');
-    var boardTableHTML = '';
-
-    for (var i = 0; i < dimension; i++) {
-        boardTableHTML += '<tr>';
-        for (var j = 0; j < dimension; j++) {
-            boardTableHTML += '<td id="' + util.location(this.dimension, j, i) + '" class="tile off"></td>';
+Manager.prototype.query = function() {
+    var returnArray = [];
+    for (var i = 0; i < this.size; i++) {
+        var rowArray = [];
+        for (var j = 0; j < this.size; j++) {
+            rowArray.push(this.world.world[util.location(this.size, i, j)]);
         }
-        boardTableHTML += '</tr>';
+        returnArray.push(rowArray);
     }
-    boardTableBody.innerHTML = boardTableHTML;
-    var boardTable = document.getElementById('gameboard');
-    boardTable.appendChild(boardTableBody);
+    return returnArray;
 };
 
-WorldGrid.prototype.worldArray = function(size) {
-    var returnObj = {};
-    for (var i = 0; i < size; i++) {
-        for (var j = 0; j < size; j++) {
-            returnObj[util.location(this.dimension, j, i)] = 0;
-        }
-    }
-
-    return returnObj;
-};
-
-WorldGrid.prototype.query = function() {
-    console.log(this.world);
-};
-
-var game = new WorldGrid(10);
-
-module.exports = WorldGrid;
+var newGame = new Manager(10);
+newGame.start();
