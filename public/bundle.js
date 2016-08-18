@@ -16,7 +16,7 @@ var Manager = function(dimension) {
     this.player = new Player(5);
 
     var Garden = gardener(dimension, this.player).Garden;
-    this.garden = new Garden();
+    this.garden = new Garden(4);
 
     var Brain = require('./neural');
     this.brain = Brain(this.size);
@@ -25,7 +25,7 @@ var Manager = function(dimension) {
 
 Manager.prototype.start = function() {
     this.step();
-    this.speed = 200;
+    this.speed = 100;
     // this.observer();
 
     setInterval(function() {
@@ -33,20 +33,18 @@ Manager.prototype.start = function() {
         // else {
         //     this.quit();
         // }
-        this.step(1);
+        this.step();
 
     }.bind(this), this.speed);
 };
 
-Manager.prototype.step = function(moveSpeed) {
+Manager.prototype.step = function() {
     this.world.draw('on', this.player.x, this.player.y);
     this.garden.season(4);
     this.harvest();
-    // setInterval(function() {
         var move = this.brain.forward(this.query());
         this.moveBrain(move);
         this.world.score(this.player.score, this.player.health);
-    // }.bind(this), this.speed / moveSpeed);
 
 };
 
@@ -57,24 +55,11 @@ Manager.prototype.quit = function() {
     }
 };
 
-Manager.prototype.observer = function() {
-
-    document.addEventListener('keydown', function(event) {
-        this.movePlayer(event.keyCode);
-        var playerLoc = util.location(this.size, this.player.x, this.player.y);
-        if (this.garden.hasPlant(playerLoc)) {
-            this.award(this.garden.trample(playerLoc));
-
-        }
-    }.bind(this));
-
-};
-
 Manager.prototype.moveBrain = function(direction) {
     this.movePlayer(37 + direction);
     var playerLoc = util.location(this.size, this.player.x, this.player.y);
         if (this.garden.hasPlant(playerLoc)) {
-            var reward = this.award(this.garden.trample(playerLoc)) / 9;
+            var reward = this.award(this.garden.trample(playerLoc));
             this.brain.backward(reward);
         }
 };
@@ -91,7 +76,7 @@ Manager.prototype.award = function(scoreObj) {
     this.player.score += scoreObj.value;
     this.player.health += scoreObj.health;
     this.world.score(this.player.score, this.player.health);
-    return scoreObj.value;
+    return scoreObj.reward;
 };
 
 Manager.prototype.harvest = function() {
@@ -104,7 +89,18 @@ Manager.prototype.harvest = function() {
     }
 };
 
-Manager.prototype.viewWorld = function() {};
+Manager.prototype.observer = function() {
+
+    document.addEventListener('keydown', function(event) {
+        this.movePlayer(event.keyCode);
+        var playerLoc = util.location(this.size, this.player.x, this.player.y);
+        if (this.garden.hasPlant(playerLoc)) {
+            this.award(this.garden.trample(playerLoc));
+
+        }
+    }.bind(this));
+
+};
 
 Manager.prototype.query = function() {
     var returnArray = [];
@@ -125,14 +121,13 @@ var deepqlearn = require("../node_modules/convnetjs/build/deepqlearn");
 module.exports = function(dim) {
 
     var Brain = new deepqlearn.Brain(Math.pow(dim, 2), 4); // dim^2 inputs, 4 outputs (0,1)
-    Brain.epsilon_test_time = 0.0; // don't make any more random choices
     Brain.learning = true;
     Brain.rewardManual = {
-        one: 1,
-        two: 2,
-        three: 4,
-        four: 1,
-        five: -5,
+        one: .2,
+        two: .4,
+        three: 1,
+        four: .2,
+        five: -1,
         off: 0,
         on: 0
     };
@@ -167,32 +162,38 @@ module.exports = function(worldSize, player) {
         1: {
             class: 'one',
             worth: 1,
-            health: 0
+            health: 0,
+            reward: 0.2
         },
         2: {
             class: 'two',
             worth: 2,
-            health: 0
+            health: 0,
+            reward: 0.4
         },
         3: {
             class: 'three',
             worth: 4,
-            health: 1
+            health: 1,
+            reward: 1
         },
         4: {
             class: 'four',
             worth: 1,
-            health: 0
+            health: 0,
+            reward: 0.2
         },
         5: {
             class: 'five',
             worth: -5,
-            health: -1
+            health: -1,
+            reward: -1
         },
         0: {
             class: 'off',
             worth: 0,
-            health: 0
+            health: 0,
+            reward: 0
         }
     };
 
@@ -208,20 +209,34 @@ module.exports = function(worldSize, player) {
         return this.manual[this.age].worth;
     };
 
+    Plant.prototype.brainFood = function() {
+        return this.manual[this.age].reward;
+    };
+
     //
     //
     //
 
-    function Garden() {
+    function Garden(voracity) {
         this.plants = {};
+        this.voracity = voracity;
+        this.tracker = 0;
     }
 
     Garden.prototype.season = function(num) {
-        this.addPlants(num);
-        this.agePlants();
+
+        if (this.tracker < this.voracity) {
+            this.tracker++;
+        } else {
+            this.tracker = 0;
+            this.addPlants(num);
+            this.agePlants();
+        }
+
     };
 
     Garden.prototype.addPlants = function(num) {
+        console.log('nummy', num)
         //Adds 'num' number of plants to the garden
         for (var i = 0; i < num; i++) {
             var plantToAdd = new Plant(worldSize);
@@ -250,9 +265,14 @@ module.exports = function(worldSize, player) {
     Garden.prototype.trample = function(coord) {
         //Returns points and garbage collects a stepped-on plant
         var plantWorth = this.plants[coord].reap();
+        var plantReward = this.plants[coord].brainFood();
         var playerHealth = this.plants[coord].getNutrition();
         this.root(coord);
-        return {value: plantWorth, health: playerHealth};
+        return {
+            value: plantWorth,
+            health: playerHealth,
+            reward: plantReward
+        };
     };
 
     Garden.prototype.root = function(coord) {
@@ -264,7 +284,6 @@ module.exports = function(worldSize, player) {
         Garden
     };
 };
-
 },{"./utility":5}],4:[function(require,module,exports){
 'use strict';
 var util = require('./utility');
@@ -285,19 +304,19 @@ module.exports = function(dim) {
     Player.prototype.keyMap = function(code) {
         var keyMappings = {
             37: function() {
-                console.log('left');
+                // console.log('left');
                 return (this.x > 0) ? this.x-- : null;
             },
             38: function() {
-                console.log('up');
+                // console.log('up');
                 return (this.y > 0) ? this.y-- : null;
             },
             39: function() {
-                console.log('right');
+                // console.log('right');
                 return (this.x < this.worldSize - 1) ? this.x++ : null;
             },
             40: function() {
-                console.log('down');
+                // console.log('down');
                 return (this.y < this.worldSize - 1) ? this.y++ : null;
             }
         };

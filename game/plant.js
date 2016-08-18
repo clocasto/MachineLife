@@ -19,32 +19,38 @@ module.exports = function(worldSize, player) {
         1: {
             class: 'one',
             worth: 1,
-            health: 0
+            health: 0,
+            reward: 0.2
         },
         2: {
             class: 'two',
             worth: 2,
-            health: 0
+            health: 0,
+            reward: 0.4
         },
         3: {
             class: 'three',
             worth: 4,
-            health: 1
+            health: 1,
+            reward: 1
         },
         4: {
             class: 'four',
             worth: 1,
-            health: 0
+            health: 0,
+            reward: 0.2
         },
         5: {
             class: 'five',
             worth: -5,
-            health: -1
+            health: -1,
+            reward: -1
         },
         0: {
             class: 'off',
             worth: 0,
-            health: 0
+            health: 0,
+            reward: 0
         }
     };
 
@@ -60,20 +66,34 @@ module.exports = function(worldSize, player) {
         return this.manual[this.age].worth;
     };
 
+    Plant.prototype.brainFood = function() {
+        return this.manual[this.age].reward;
+    };
+
     //
     //
     //
 
-    function Garden() {
+    function Garden(voracity) {
         this.plants = {};
+        this.voracity = voracity;
+        this.tracker = 0;
     }
 
     Garden.prototype.season = function(num) {
-        this.addPlants(num);
-        this.agePlants();
+
+        if (this.tracker < this.voracity) {
+            this.tracker++;
+        } else {
+            this.tracker = 0;
+            this.addPlants(num);
+            this.agePlants();
+        }
+
     };
 
     Garden.prototype.addPlants = function(num) {
+        console.log('nummy', num)
         //Adds 'num' number of plants to the garden
         for (var i = 0; i < num; i++) {
             var plantToAdd = new Plant(worldSize);
@@ -102,9 +122,14 @@ module.exports = function(worldSize, player) {
     Garden.prototype.trample = function(coord) {
         //Returns points and garbage collects a stepped-on plant
         var plantWorth = this.plants[coord].reap();
+        var plantReward = this.plants[coord].brainFood();
         var playerHealth = this.plants[coord].getNutrition();
         this.root(coord);
-        return {value: plantWorth, health: playerHealth};
+        return {
+            value: plantWorth,
+            health: playerHealth,
+            reward: plantReward
+        };
     };
 
     Garden.prototype.root = function(coord) {

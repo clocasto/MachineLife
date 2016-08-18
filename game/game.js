@@ -15,7 +15,7 @@ var Manager = function(dimension) {
     this.player = new Player(5);
 
     var Garden = gardener(dimension, this.player).Garden;
-    this.garden = new Garden();
+    this.garden = new Garden(4);
 
     var Brain = require('./neural');
     this.brain = Brain(this.size);
@@ -24,7 +24,7 @@ var Manager = function(dimension) {
 
 Manager.prototype.start = function() {
     this.step();
-    this.speed = 200;
+    this.speed = 100;
     // this.observer();
 
     setInterval(function() {
@@ -32,20 +32,18 @@ Manager.prototype.start = function() {
         // else {
         //     this.quit();
         // }
-        this.step(1);
+        this.step();
 
     }.bind(this), this.speed);
 };
 
-Manager.prototype.step = function(moveSpeed) {
+Manager.prototype.step = function() {
     this.world.draw('on', this.player.x, this.player.y);
     this.garden.season(4);
     this.harvest();
-    // setInterval(function() {
         var move = this.brain.forward(this.query());
         this.moveBrain(move);
         this.world.score(this.player.score, this.player.health);
-    // }.bind(this), this.speed / moveSpeed);
 
 };
 
@@ -56,24 +54,11 @@ Manager.prototype.quit = function() {
     }
 };
 
-Manager.prototype.observer = function() {
-
-    document.addEventListener('keydown', function(event) {
-        this.movePlayer(event.keyCode);
-        var playerLoc = util.location(this.size, this.player.x, this.player.y);
-        if (this.garden.hasPlant(playerLoc)) {
-            this.award(this.garden.trample(playerLoc));
-
-        }
-    }.bind(this));
-
-};
-
 Manager.prototype.moveBrain = function(direction) {
     this.movePlayer(37 + direction);
     var playerLoc = util.location(this.size, this.player.x, this.player.y);
         if (this.garden.hasPlant(playerLoc)) {
-            var reward = this.award(this.garden.trample(playerLoc)) / 9;
+            var reward = this.award(this.garden.trample(playerLoc));
             this.brain.backward(reward);
         }
 };
@@ -90,7 +75,7 @@ Manager.prototype.award = function(scoreObj) {
     this.player.score += scoreObj.value;
     this.player.health += scoreObj.health;
     this.world.score(this.player.score, this.player.health);
-    return scoreObj.value;
+    return scoreObj.reward;
 };
 
 Manager.prototype.harvest = function() {
@@ -103,7 +88,18 @@ Manager.prototype.harvest = function() {
     }
 };
 
-Manager.prototype.viewWorld = function() {};
+Manager.prototype.observer = function() {
+
+    document.addEventListener('keydown', function(event) {
+        this.movePlayer(event.keyCode);
+        var playerLoc = util.location(this.size, this.player.x, this.player.y);
+        if (this.garden.hasPlant(playerLoc)) {
+            this.award(this.garden.trample(playerLoc));
+
+        }
+    }.bind(this));
+
+};
 
 Manager.prototype.query = function() {
     var returnArray = [];

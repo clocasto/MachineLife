@@ -3,14 +3,13 @@ var deepqlearn = require("../node_modules/convnetjs/build/deepqlearn");
 module.exports = function(dim) {
 
     var Brain = new deepqlearn.Brain(Math.pow(dim, 2), 4); // dim^2 inputs, 4 outputs (0,1)
-    Brain.epsilon_test_time = 0.0; // don't make any more random choices
     Brain.learning = true;
     Brain.rewardManual = {
-        one: 1,
-        two: 2,
-        three: 4,
-        four: 1,
-        five: -5,
+        one: .2,
+        two: .4,
+        three: 1,
+        four: .2,
+        five: -1,
         off: 0,
         on: 0
     };
