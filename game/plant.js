@@ -8,7 +8,7 @@ module.exports = function(worldSize, player) {
         this.y = util.randNum(worldSize);
         this.coordinate = util.location(worldSize, this.x, this.y);
         this.age = 1;
-        console.log('added plant');
+        // console.log('added plant');
     }
 
     Plant.prototype.ageOnce = function() {

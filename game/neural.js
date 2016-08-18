@@ -4,7 +4,7 @@ module.exports = function(dim) {
 
     var Brain = new deepqlearn.Brain(Math.pow(dim, 2), 4); // dim^2 inputs, 4 outputs (0,1)
     Brain.epsilon_test_time = 0.0; // don't make any more random choices
-    Brain.learning = false;
+    Brain.learning = true;
     Brain.rewardManual = {
         one: 1,
         two: 2,

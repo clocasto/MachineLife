@@ -21,21 +21,33 @@ var Manager = function(dimension) {
     var Brain = require('./neural');
     this.brain = Brain(this.size);
 
-    console.log(this.brain);
-
 };
 
 Manager.prototype.start = function() {
     this.step();
-    this.observer();
+    this.speed = 200;
+    // this.observer();
 
     setInterval(function() {
         // if (this.player.health-- > 0) this.step();
         // else {
         //     this.quit();
         // }
-        this.step();
-    }.bind(this), 1000);
+        this.step(1);
+
+    }.bind(this), this.speed);
+};
+
+Manager.prototype.step = function(moveSpeed) {
+    this.world.draw('on', this.player.x, this.player.y);
+    this.garden.season(4);
+    this.harvest();
+    // setInterval(function() {
+        var move = this.brain.forward(this.query());
+        this.moveBrain(move);
+        this.world.score(this.player.score, this.player.health);
+    // }.bind(this), this.speed / moveSpeed);
+
 };
 
 Manager.prototype.quit = function() {
@@ -52,15 +64,25 @@ Manager.prototype.observer = function() {
         var playerLoc = util.location(this.size, this.player.x, this.player.y);
         if (this.garden.hasPlant(playerLoc)) {
             this.award(this.garden.trample(playerLoc));
+
         }
     }.bind(this));
 
 };
 
+Manager.prototype.moveBrain = function(direction) {
+    this.movePlayer(37 + direction);
+    var playerLoc = util.location(this.size, this.player.x, this.player.y);
+        if (this.garden.hasPlant(playerLoc)) {
+            var reward = this.award(this.garden.trample(playerLoc)) / 9;
+            this.brain.backward(reward);
+        }
+};
+
 Manager.prototype.movePlayer = function(keyCode) {
     if (this.player.allowedMoves.includes(keyCode)) {
         this.world.draw('off', this.player.x, this.player.y);
-        this.player.keyMap(event.keyCode);
+        this.player.keyMap(keyCode);
         this.world.draw('on', this.player.x, this.player.y);
     }
 };
@@ -69,16 +91,7 @@ Manager.prototype.award = function(scoreObj) {
     this.player.score += scoreObj.value;
     this.player.health += scoreObj.health;
     this.world.score(this.player.score, this.player.health);
-};
-
-Manager.prototype.step = function() {
-    this.world.draw('on', this.player.x, this.player.y);
-    this.garden.season(4);
-    this.harvest();
-    console.log('Move?', this.brain.forward(this.query()));
-    console.log('Reward:', this.world.world[this.player.loc]);
-    // this.brain.backward([Brain.rewardMe(this.world.world[this.player.loc])]);
-    this.world.score(this.player.score, this.player.health);
+    return scoreObj.value;
 };
 
 Manager.prototype.harvest = function() {
@@ -96,17 +109,16 @@ Manager.prototype.viewWorld = function() {};
 Manager.prototype.query = function() {
     var returnArray = [];
     for (var i = 0; i < this.size; i++) {
-        var rowArray = [];
         for (var j = 0; j < this.size; j++) {
-            rowArray.push(this.world.world[util.location(this.size, i, j)]);
+            returnArray.push(this.world.world[util.location(this.size, i, j)]);
         }
-        returnArray.push(rowArray);
     }
     return returnArray;
 };
 
 var newGame = new Manager(10);
 newGame.start();
+
 },{"./neural":2,"./plant.js":3,"./player":4,"./utility":5,"./world":6}],2:[function(require,module,exports){
 var deepqlearn = require("../node_modules/convnetjs/build/deepqlearn");
 
@@ -114,7 +126,7 @@ module.exports = function(dim) {
 
     var Brain = new deepqlearn.Brain(Math.pow(dim, 2), 4); // dim^2 inputs, 4 outputs (0,1)
     Brain.epsilon_test_time = 0.0; // don't make any more random choices
-    Brain.learning = false;
+    Brain.learning = true;
     Brain.rewardManual = {
         one: 1,
         two: 2,
@@ -144,7 +156,7 @@ module.exports = function(worldSize, player) {
         this.y = util.randNum(worldSize);
         this.coordinate = util.location(worldSize, this.x, this.y);
         this.age = 1;
-        console.log('added plant');
+        // console.log('added plant');
     }
 
     Plant.prototype.ageOnce = function() {
