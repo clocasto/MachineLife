@@ -44,7 +44,7 @@ Manager.prototype.step = function() {
         var move = this.brain.forward(this.query());
         this.moveBrain(move);
         this.world.score(this.player.score, this.player.health, this.player.reds / this.brain.forward_passes, this.player.reward);
-        console.log('My age:', this.brain.age);
+        this.brain.visSelf(document.getElementById('brainboard'));
 };
 
 Manager.prototype.quit = function() {
