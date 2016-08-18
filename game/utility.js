@@ -1,4 +1,5 @@
 module.exports = {
+    //returns STRINGIFIED version of a specific coordinate with prepended zeroes
     location: function(dim, x, y) {
         function stringify(num) {
             num = num.toString().split('');

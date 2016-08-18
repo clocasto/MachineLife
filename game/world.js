@@ -3,7 +3,7 @@ var util = require('./utility');
 
 module.exports = function(size) {
 
-
+//runs once on page load
 function World() {
 	this.world = this.createWorld(size);
 	this.size = size;
@@ -12,11 +12,13 @@ function World() {
 
 }
 
+// draws grid into the DOM
 World.prototype.draw = function(value, x, y) {
     this.world[util.location(size, x, y)] = value;
     document.getElementById(util.location(size, x, y)).className = 'tile ' + String(value);
 };
 
+// creates object representation of world.
 World.prototype.createWorld = function() {
     var returnObj = {};
     for (var i = 0; i < size; i++) {
@@ -27,6 +29,7 @@ World.prototype.createWorld = function() {
     return returnObj;
 };
 
+// creates every specific coordinate or "square" of the grid
 World.prototype.boardMaker = function() {
     var boardTableBody = document.createElement('tbody');
     var boardTableHTML = '';
@@ -43,6 +46,8 @@ World.prototype.boardMaker = function() {
     boardTable.appendChild(boardTableBody);
 };
 
+
+// updates scoreboard
 World.prototype.score = function(score, health, reds, reward) {
 	document.getElementById('score').textContent = String(score);
 	document.getElementById('health').textContent = String(health);
@@ -52,4 +57,3 @@ World.prototype.score = function(score, health, reds, reward) {
 
 	return World;
 };
-
