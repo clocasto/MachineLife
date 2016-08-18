@@ -4,7 +4,6 @@
   "description": "",
   "main": "app.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "start": "watchify ./game/game.js -o ./public/bundle.js -v & nodemon app.js",
     "build-css": "node-sass -w -r assets -o public/stylesheets"
   },
