@@ -24,7 +24,7 @@ var Manager = function(dimension) {
 
 Manager.prototype.start = function() {
     this.step();
-    this.speed = 100;
+    this.speed = 1;
     // this.observer();
 
     setInterval(function() {
@@ -39,12 +39,12 @@ Manager.prototype.start = function() {
 
 Manager.prototype.step = function() {
     this.world.draw('on', this.player.x, this.player.y);
-    this.garden.season(4);
+    this.garden.season(1);
     this.harvest();
         var move = this.brain.forward(this.query());
         this.moveBrain(move);
-        this.world.score(this.player.score, this.player.health);
-
+        this.world.score(this.player.score, this.player.health, this.player.reds / this.brain.forward_passes, this.player.reward);
+        console.log('My age:', this.brain.age);
 };
 
 Manager.prototype.quit = function() {
@@ -60,7 +60,12 @@ Manager.prototype.moveBrain = function(direction) {
         if (this.garden.hasPlant(playerLoc)) {
             var reward = this.award(this.garden.trample(playerLoc));
             this.brain.backward(reward);
+        } else {
+            var reward = -0.02;
+            this.brain.backward(reward);
         }
+        this.player.reward += reward;
+        console.log('reward', reward);
 };
 
 Manager.prototype.movePlayer = function(keyCode) {
@@ -74,7 +79,9 @@ Manager.prototype.movePlayer = function(keyCode) {
 Manager.prototype.award = function(scoreObj) {
     this.player.score += scoreObj.value;
     this.player.health += scoreObj.health;
-    this.world.score(this.player.score, this.player.health);
+    console.log(scoreObj.worth);
+    if (scoreObj.value < 0) this.player.reds++;
+    this.world.score(this.player.score, this.player.health, this.player.reds / this.brain.forward_passes, this.player.reward);
     return scoreObj.reward;
 };
 
@@ -108,8 +115,9 @@ Manager.prototype.query = function() {
             returnArray.push(this.world.world[util.location(this.size, i, j)]);
         }
     }
+    // console.log(returnArray);
     return returnArray;
 };
 
-var newGame = new Manager(10);
+var newGame = new Manager(5);
 newGame.start();

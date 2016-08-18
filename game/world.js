@@ -43,9 +43,11 @@ World.prototype.boardMaker = function() {
     boardTable.appendChild(boardTableBody);
 };
 
-World.prototype.score = function(score, health) {
+World.prototype.score = function(score, health, reds, reward) {
 	document.getElementById('score').textContent = String(score);
 	document.getElementById('health').textContent = String(health);
+    document.getElementById('reds').textContent = String(reds);
+    document.getElementById('reward').textContent = String(reward);
 };
 
 	return World;

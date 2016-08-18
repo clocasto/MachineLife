@@ -25,7 +25,7 @@ var Manager = function(dimension) {
 
 Manager.prototype.start = function() {
     this.step();
-    this.speed = 100;
+    this.speed = 1;
     // this.observer();
 
     setInterval(function() {
@@ -40,12 +40,12 @@ Manager.prototype.start = function() {
 
 Manager.prototype.step = function() {
     this.world.draw('on', this.player.x, this.player.y);
-    this.garden.season(4);
+    this.garden.season(1);
     this.harvest();
         var move = this.brain.forward(this.query());
         this.moveBrain(move);
-        this.world.score(this.player.score, this.player.health);
-
+        this.world.score(this.player.score, this.player.health, this.player.reds / this.brain.forward_passes, this.player.reward);
+        console.log('My age:', this.brain.age);
 };
 
 Manager.prototype.quit = function() {
@@ -61,7 +61,12 @@ Manager.prototype.moveBrain = function(direction) {
         if (this.garden.hasPlant(playerLoc)) {
             var reward = this.award(this.garden.trample(playerLoc));
             this.brain.backward(reward);
+        } else {
+            var reward = -0.02;
+            this.brain.backward(reward);
         }
+        this.player.reward += reward;
+        console.log('reward', reward);
 };
 
 Manager.prototype.movePlayer = function(keyCode) {
@@ -75,7 +80,9 @@ Manager.prototype.movePlayer = function(keyCode) {
 Manager.prototype.award = function(scoreObj) {
     this.player.score += scoreObj.value;
     this.player.health += scoreObj.health;
-    this.world.score(this.player.score, this.player.health);
+    console.log(scoreObj.worth);
+    if (scoreObj.value < 0) this.player.reds++;
+    this.world.score(this.player.score, this.player.health, this.player.reds / this.brain.forward_passes, this.player.reward);
     return scoreObj.reward;
 };
 
@@ -109,10 +116,11 @@ Manager.prototype.query = function() {
             returnArray.push(this.world.world[util.location(this.size, i, j)]);
         }
     }
+    // console.log(returnArray);
     return returnArray;
 };
 
-var newGame = new Manager(10);
+var newGame = new Manager(5);
 newGame.start();
 
 },{"./neural":2,"./plant.js":3,"./player":4,"./utility":5,"./world":6}],2:[function(require,module,exports){
@@ -120,15 +128,20 @@ var deepqlearn = require("../node_modules/convnetjs/build/deepqlearn");
 
 module.exports = function(dim) {
 
-    var Brain = new deepqlearn.Brain(Math.pow(dim, 2), 4); // dim^2 inputs, 4 outputs (0,1)
+    var options = {
+        temporal_window: 2
+        // experience_size: 5000
+    }
+
+    var Brain = new deepqlearn.Brain(Math.pow(dim, 2), 4, options); // dim^2 inputs, 4 outputs (0,1)
     Brain.learning = true;
     Brain.rewardManual = {
-        one: .2,
-        two: .4,
-        three: 1,
-        four: .2,
+        one: .02,
+        two: .04,
+        three: .1,
+        four: .02,
         five: -1,
-        off: 0,
+        off: -0.005,
         on: 0
     };
     Brain.rewardMe = function(string) {
@@ -236,7 +249,6 @@ module.exports = function(worldSize, player) {
     };
 
     Garden.prototype.addPlants = function(num) {
-        console.log('nummy', num)
         //Adds 'num' number of plants to the garden
         for (var i = 0; i < num; i++) {
             var plantToAdd = new Plant(worldSize);
@@ -293,7 +305,9 @@ module.exports = function(dim) {
     var Player = function(startingHP) {
         this.worldSize = dim;
         this.health = startingHP;
+        this.reds = 0;
         this.score = 0;
+        this.reward = 0;
         this.x = 0;
         this.y = 0;
         this.allowedMoves = [37, 38, 39, 40];
@@ -392,9 +406,11 @@ World.prototype.boardMaker = function() {
     boardTable.appendChild(boardTableBody);
 };
 
-World.prototype.score = function(score, health) {
+World.prototype.score = function(score, health, reds, reward) {
 	document.getElementById('score').textContent = String(score);
 	document.getElementById('health').textContent = String(health);
+    document.getElementById('reds').textContent = String(reds);
+    document.getElementById('reward').textContent = String(reward);
 };
 
 	return World;

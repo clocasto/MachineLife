@@ -93,7 +93,6 @@ module.exports = function(worldSize, player) {
     };
 
     Garden.prototype.addPlants = function(num) {
-        console.log('nummy', num)
         //Adds 'num' number of plants to the garden
         for (var i = 0; i < num; i++) {
             var plantToAdd = new Plant(worldSize);
