@@ -18,10 +18,10 @@
                 <div class="panel panel-default">
                   <div class="panel-body">
                     <div class="scoreboard">
-                        <h1>Score: <span id="score">0</span></h1>
-                        <h3>Health: <span id="health">0</span></h3>
-                        <h3>Red Plants: <span id="reds">0</span></h3>
-                        <h3>Total Reward: <span id="reward">0</span></h3>
+                        <h2>Score: <span id="score">0</span></h2>
+                        <h5>Health: <span id="health">0</span></h5>
+                        <h5>Red Plant Ratio: <span id="reds">0</span></h5>
+                        <h5>Total Reward: <span id="reward">0</span></h5>
                     </div>
                   </div>
                 </div>
@@ -29,17 +29,14 @@
                 
             </div>
 
-            <div class="col-lg-8">
+            <div class="col-lg-7">
                     {% include "_gameboard.html" %}
             </div>
             
-            <div class="col-lg-2">
+            <div class="col-lg-3">
                 <div class="panel panel-default">
                   <div class="panel-body">
-                    <div class="scoreboard">
-                        <h1>Score: <span>0</span></h1>
-                        <h3>Health: <span>0</span></h3>
-                        <h3>Red Plants: <span>0</span></h3>
+                    <div class="scoreboard" id="brainboard">
                     </div>
                   </div>
                 </div>
