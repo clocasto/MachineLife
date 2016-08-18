@@ -84,8 +84,13 @@ module.exports = function(worldSize, player) {
         this.tracker = 0;
     }
 
+    /**
+     * Manages addind plants and aging plants
+     * @method function
+     * @param  {Integer} num number of plants to add
+     * @return {[type]}
+     */
     Garden.prototype.season = function(num) {
-
         if (this.tracker < this.stepsToAge) {
             this.tracker++;
         } else {

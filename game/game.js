@@ -4,6 +4,12 @@ var entities = require('./player');
 var util = require('./utility');
 var creator = require('./world');
 
+/**
+ * Sets up a "manager" for a dimension x dimension grid, creates a world, player, garden, and brain
+ * @method function
+ * @param  {Integer} dimension length of side of a square grid
+ * @return {[type]}
+ */
 var Manager = function(dimension) {
 
     this.size = dimension;
@@ -22,6 +28,12 @@ var Manager = function(dimension) {
 
 };
 
+
+/**
+ * starts the game
+ * @method function
+ * @return
+ */
 Manager.prototype.start = function() {
     this.step();
     this.speed = 1;
@@ -37,6 +49,11 @@ Manager.prototype.start = function() {
     }.bind(this), this.speed);
 };
 
+/**
+ * Takes 1 step , advances "season" by 1, attempts to harvest
+ * @method function
+ * @return {[type]}
+ */
 Manager.prototype.step = function() {
     this.world.draw('on', this.player.x, this.player.y);
     this.garden.season(1);
@@ -47,6 +64,7 @@ Manager.prototype.step = function() {
         console.log('My age:', this.brain.age);
 };
 
+
 Manager.prototype.quit = function() {
     for (var plot in this.garden.plants) {
         this.world.draw('off', this.garden.plants[plot].x, this.garden.plants[plot].y);
@@ -54,6 +72,8 @@ Manager.prototype.quit = function() {
     }
 };
 
+
+//Reward brain based on its move.
 Manager.prototype.moveBrain = function(direction) {
     this.movePlayer(37 + direction);
     var playerLoc = util.location(this.size, this.player.x, this.player.y);
@@ -68,6 +88,7 @@ Manager.prototype.moveBrain = function(direction) {
         console.log('reward', reward);
 };
 
+//Moves Player
 Manager.prototype.movePlayer = function(keyCode) {
     if (this.player.allowedMoves.includes(keyCode)) {
         this.world.draw('off', this.player.x, this.player.y);
@@ -76,6 +97,7 @@ Manager.prototype.movePlayer = function(keyCode) {
     }
 };
 
+//Scoreboard award handling
 Manager.prototype.award = function(scoreObj) {
     this.player.score += scoreObj.value;
     this.player.health += scoreObj.health;
@@ -85,6 +107,7 @@ Manager.prototype.award = function(scoreObj) {
     return scoreObj.reward;
 };
 
+//harvest plant and remove it from grid.
 Manager.prototype.harvest = function() {
     for (var plot in this.garden.plants) {
         if (this.garden.plants.hasOwnProperty(plot)) {
@@ -95,19 +118,20 @@ Manager.prototype.harvest = function() {
     }
 };
 
-Manager.prototype.observer = function() {
+// uncomment if oyu want to play yourself.
+//
+// Manager.prototype.observer = function() {
+//
+//     document.addEventListener('keydown', function(event) {
+//         this.movePlayer(event.keyCode);
+//         var playerLoc = util.location(this.size, this.player.x, this.player.y);
+//         if (this.garden.hasPlant(playerLoc)) {
+//             this.award(this.garden.trample(playerLoc));
+//         }
+//     }.bind(this));
+// };
 
-    document.addEventListener('keydown', function(event) {
-        this.movePlayer(event.keyCode);
-        var playerLoc = util.location(this.size, this.player.x, this.player.y);
-        if (this.garden.hasPlant(playerLoc)) {
-            this.award(this.garden.trample(playerLoc));
-
-        }
-    }.bind(this));
-
-};
-
+//get location of all coordinates.
 Manager.prototype.query = function() {
     var returnArray = [];
     for (var i = 0; i < this.size; i++) {
