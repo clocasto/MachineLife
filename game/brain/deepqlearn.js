@@ -286,7 +286,6 @@ var cnnutil = require("./util");
 
 (function(lib) {
   "use strict";
-    console.log('\n','hi','\n');
   if (typeof module === "undefined" || typeof module.exports === "undefined") {
     window.deepqlearn = lib; // in ordinary browser attach library to window
   } else {
