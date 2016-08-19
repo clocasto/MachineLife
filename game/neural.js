@@ -8,7 +8,7 @@ module.exports = function(dim) {
     };
 
     var Brain = new deepqlearn.Brain(Math.pow(dim, 2), 4, options); // dim^2 inputs, 4 outputs (0,1)
-    // Brain.learning = true;
+    Brain.learning = true;
     Brain.rewardManual = {
         one: .02,
         two: .04,
