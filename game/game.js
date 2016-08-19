@@ -47,7 +47,7 @@ var Manager = function(dimension) {
  * @method  {function}
  */
 Manager.prototype.step = function() {
-    this.world.draw('on', this.player.x, this.player.y);
+    // this.world.draw('on', this.player.x, this.player.y);
     this.garden.season(1);
     this.harvest();
 
@@ -73,7 +73,7 @@ Manager.prototype.moveBrain = function(direction) {
         var reward = -0.02;
         this.brain.backward(reward);
     }
-    console.log(reward);
+    // console.log(reward);
     this.player.reward += reward;
 };
 
@@ -85,9 +85,9 @@ Manager.prototype.moveBrain = function(direction) {
  */
 Manager.prototype.movePlayer = function(keyCode) {
     if (this.player.allowedMoves.includes(keyCode)) {
-        this.world.draw('off', this.player.x, this.player.y);
+        // this.world.draw('off', this.player.x, this.player.y);
         this.player.keyMap(keyCode);
-        this.world.draw('on', this.player.x, this.player.y);
+        // this.world.draw('on', this.player.x, this.player.y);
     }
 };
 
@@ -130,7 +130,7 @@ Manager.prototype.harvest = function() {
         if (this.garden.plants.hasOwnProperty(plot)) {
             var plant = this.garden.plants[plot];
             if (plant.getAge() === 'off') this.garden.delete(plant.coordinate);
-            this.world.draw(plant.getAge(), plant.x, plant.y);
+            // this.world.draw(plant.getAge(), plant.x, plant.y);
         }
     }
 };
@@ -159,18 +159,22 @@ Manager.prototype.observer = function() {
  * @return {undefined}
  */
 Manager.prototype.start = function() {
-    this.step();
+    // this.step();
     this.speed = 1;
     // this.observer();
 
-    setInterval(function() {
-        // if (this.player.health-- > 0) this.step();
-        // else {
-        //     this.quit();
-        // }
-        this.step();
+    // setInterval(function() {
+    //     // if (this.player.health-- > 0) this.step();
+    //     // else {
+    //     //     this.quit();
+    //     // }
+    //     this.step();
 
-    }.bind(this), this.speed);
+    // }.bind(this), this.speed);
+    // 
+    while (this.brain.age < 10000) {
+        this.step();
+    }
 };
 
 /**
@@ -181,7 +185,7 @@ Manager.prototype.start = function() {
  */
 Manager.prototype.quit = function() {
     for (var plot in this.garden.plants) {
-        this.world.draw('off', this.garden.plants[plot].x, this.garden.plants[plot].y);
+        // this.world.draw('off', this.garden.plants[plot].x, this.garden.plants[plot].y);
         this.garden.root(plot);
     }
 };
