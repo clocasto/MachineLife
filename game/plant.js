@@ -2,19 +2,40 @@
 var util = require('./utility');
 
 module.exports = function(worldSize, player) {
-    //constructor for each plant object.
-    function Plant(worldSize) {
+
+    /**
+     *
+     *
+     *
+     * The Plant Constructor.
+     * 1. Each plant is initialized on a random coordinate.
+     * 2. Each plant's location is accessible by x AND y properties or a '0'-padded string property, 'this.coordinate'.
+     * @param {Number}
+     *
+     *
+     *
+     */
+    function Plant() {
         this.x = util.randNum(worldSize);
         this.y = util.randNum(worldSize);
         this.coordinate = util.location(worldSize, this.x, this.y);
         this.age = 1;
         // console.log('added plant');
     }
-    //maximum age of 4
+
+    /**
+     * 1. Ages the current plant once. If this.plant's current age is five, however, the plant age is set to 0 as an indicator of plant death.
+     * @return {undefined}
+     */
     Plant.prototype.ageOnce = function() {
         this.age = this.age > 4 ? 0 : this.age + 1;
     };
-    //worth is for score, reward is for deepqlearn.  need to decouple these.
+
+    /**
+     * 1. This object defines the CSS class, game value, and returned health of a plant (these are functions of plant age).
+     * 2. This property currently overrides the brain's rewardManual object.
+     * @type {Object}
+     */
     Plant.prototype.manual = {
         1: {
             class: 'one',
@@ -50,57 +71,81 @@ module.exports = function(worldSize, player) {
             class: 'off',
             worth: 0,
             health: 0,
-            reward: 0
+            reward: -0.05
         }
     };
 
+    /**
+     * 1. Helper function which returns this.plant's age.
+     * @return {String}
+     */
     Plant.prototype.getAge = function() {
         return this.manual[this.age].class;
     };
 
+    /**
+     * 1. Helper function which returns this.plant's health return.
+     * @return {Number}
+     */
     Plant.prototype.getNutrition = function() {
         return this.manual[this.age].health;
     };
-    // returns its player score.
+
+    /**
+     * 1. Helper function which returns this.plant's point value (for game scoring).
+     * @return {Number}
+     */
     Plant.prototype.reap = function() {
         return this.manual[this.age].worth;
     };
-    //returns deepqlearn reward or penalty.
+
+    /**
+     * 1. Helper function which returns this.plant's reward (for brain learning).
+     * @return {Number}
+     */
     Plant.prototype.brainFood = function() {
         return this.manual[this.age].reward;
     };
 
-    //
-    //
-    //
-
     /**
-     * stepsToAge: how many steps it takes for a plant to age
+     *
+     *
+     *
+     * The Garden Constructor.
+     * 2. Accepts a number of steps required for plants to age, 'stepsToAge'.
+     * @param {Number}
+     *
+     *
+     *
      */
-
     function Garden(stepsToAge) {
         this.plants = {};
         this.stepsToAge = stepsToAge;
-        this.tracker = 0;
+        this.tracker = 0; //Used in tandem with this.stepsToAge to manage plant aging frequency.
     }
 
     /**
-     * Manages addind plants and aging plants
-     * @method function
-     * @param  {Integer} num number of plants to add
-     * @return {[type]}
+     * 1. Manages the frequency of adding and aging plants. This function tunes the ratio of Player moves to plant turns (adding and aging).
+     * @param  {Number}
+     * @return {undefined}
      */
-    Garden.prototype.season = function(num) {
+    Garden.prototype.season = function(numberOfNewPlants) {
         if (this.tracker < this.stepsToAge) {
             this.tracker++;
         } else {
             this.tracker = 0;
-            this.addPlants(num);
+            this.addPlants(numberOfNewPlants);
             this.agePlants();
         }
 
     };
 
+    /**
+     * 1. Adds 'num' number of plants to this.garden at random locations.
+     * 2. A plant addition will be SKIPPED if the chosen location is occupied by any object.
+     * @param {Number}
+     * @return {undefined}
+     */
     Garden.prototype.addPlants = function(num) {
         //Adds 'num' number of plants to the garden
         for (var i = 0; i < num; i++) {
@@ -113,8 +158,11 @@ module.exports = function(worldSize, player) {
         }
     };
 
+    /**
+     * 1. Ages all plants in this.garden
+     * @return {undefined}
+     */
     Garden.prototype.agePlants = function() {
-        //Ages all of the plants in the garden
         for (var plot in this.plants) {
             if (this.plants.hasOwnProperty(plot)) {
                 var selectedPlant = this.plants[plot];
@@ -123,17 +171,27 @@ module.exports = function(worldSize, player) {
         }
     };
 
-    Garden.prototype.hasPlant = function(coord) {
-        return this.plants.hasOwnProperty(coord);
+    /**
+     * 1. Helper function which checks for a plant in this.garden at the specified coordinate.
+     * @param  {String}
+     * @return {Boolean}
+     */
+    Garden.prototype.hasPlant = function(coordinate) {
+        return this.plants.hasOwnProperty(coordinate);
     };
 
-
-    //Returns value, health, and reward, garbage collects a stepped-on plant
-    Garden.prototype.trample = function(coord) {
-        var plantWorth = this.plants[coord].reap();
-        var plantReward = this.plants[coord].brainFood();
-        var playerHealth = this.plants[coord].getNutrition();
-        this.delete(coord);
+    /**
+     * 1. Caches the plant value, returned health, and plant reward.
+     * 2. Deletes the plant from this.garden at the specified coordinate.
+     * 3. Returns an object of the cached values for later scoring.
+     * @param  {String}
+     * @return {Object}
+     */
+    Garden.prototype.trample = function(coordinate) {
+        var plantWorth = this.plants[coordinate].reap();
+        var plantReward = this.plants[coordinate].brainFood();
+        var playerHealth = this.plants[coordinate].getNutrition();
+        this.delete(coordinate);
         return {
             value: plantWorth,
             health: playerHealth,
@@ -141,8 +199,14 @@ module.exports = function(worldSize, player) {
         };
     };
 
-    Garden.prototype.delete = function(coord) {
-        delete this.plants[coord];
+    /**
+     * 1. Deletes the plant from this.garden at the specified coordinate.
+     * 2. Accepts a '0'-padded string coordinate (see util.location).
+     * @param  {String}
+     * @return {undefined}
+     */
+    Garden.prototype.delete = function(coordinate) {
+        delete this.plants[coordinate];
     };
 
     return {

@@ -3,6 +3,16 @@ var util = require('./utility');
 
 module.exports = function(dim) {
 
+    /**
+     *
+     *
+     *
+     * The Player Constructor.
+     * @param {Number}
+     *
+     *
+     *
+     */
     var Player = function(startingHP) {
         this.worldSize = dim;
         this.health = startingHP;
@@ -11,11 +21,16 @@ module.exports = function(dim) {
         this.reward = 0;
         this.x = 0;
         this.y = 0;
-        this.allowedMoves = [37, 38, 39, 40];
+        this.allowedMoves = [37, 38, 39, 40]; //Arrow key keyCodes - relic from human keyboard controls.
         this.loc = util.location(10, this.x, this.y);
 
     };
-    //possible moves: up down left right
+
+    /**
+     * 1. Adjusts this.player 'x' and 'y' properties based on keyCode argument.
+     * @param  {Number}
+     * @return {Number}
+     */
     Player.prototype.keyMap = function(code) {
         var keyMappings = {
             37: function() {
@@ -36,10 +51,12 @@ module.exports = function(dim) {
             }
         };
 
+        //Check if the code corresponds to a valid move
         if (keyMappings[code.toString()]) {
             keyMappings[code.toString()].bind(this)();
         }
     };
 
+    //Module return.
     return Player;
 };

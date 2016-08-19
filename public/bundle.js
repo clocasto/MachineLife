@@ -289,7 +289,6 @@ var cnnutil = require("./util");
 
 (function(lib) {
   "use strict";
-    console.log('\n','hi','\n');
   if (typeof module === "undefined" || typeof module.exports === "undefined") {
     window.deepqlearn = lib; // in ordinary browser attach library to window
   } else {
@@ -370,6 +369,22 @@ var entities = require('./player');
 var util = require('./utility');
 var creator = require('./world');
 
+/**
+ *
+ *
+ *
+ * The Game ('Manager') Constructor.
+ * 1. Sets the game size to 'dimension'.
+ * 2. Attaches a World object to this.world.
+ * 3. Attaches a Player Object to this.player.
+ * 4. Attaches a Garden Object to this.garden.
+ * 5. Attaches a Brain Object to this.brain.
+ * @param {Number}
+ * @return {Manager} [Game constructor which holds and oversees all modules. Takes a grid width as an argument.]
+ *
+ *
+ *
+ */
 var Manager = function(dimension) {
 
     this.size = dimension;
@@ -388,6 +403,126 @@ var Manager = function(dimension) {
 
 };
 
+/**
+ * 1. Advances the game by one step (time unit).
+ * 2. Draws the player pixel.
+ * 3. Calls this.garden's season method which attempts to spawn a specified number of plants and age them.
+ * 4. Deletes any dead plants from this.garden and re-draws blank tiles using this.world.draw.
+ * @return {undefined}
+ * @method  {function}
+ */
+Manager.prototype.step = function() {
+    this.world.draw('on', this.player.x, this.player.y);
+    this.garden.season(1);
+    this.harvest();
+
+    //Handling brain movement and scoring below.
+    var move = this.brain.forward(this.query());
+    this.moveBrain(move);
+    this.world.score(this.player.score, this.player.health, this.player.reds / this.brain.forward_passes, this.player.reward);
+    this.brain.visSelf(document.getElementById('brainboard')); //Displays brain statistics.
+};
+
+/**
+ * 1. Accepts a direction from this.brain (Number [0,x) ) and attempts to move this.player.
+ * @param  {Number}
+ * @return {undefined}
+ */
+Manager.prototype.moveBrain = function(direction) {
+    this.movePlayer(37 + direction);
+    var playerLoc = util.location(this.size, this.player.x, this.player.y);
+    if (this.garden.hasPlant(playerLoc)) {
+        var reward = this.award(this.garden.trample(playerLoc));
+        this.brain.backward(reward);
+    } else {
+        var reward = -0.02;
+        this.brain.backward(reward);
+    }
+    console.log(reward);
+    this.player.reward += reward;
+};
+
+/**
+ * 1. Accepts a keycode (relic from when Manager.prototype.movePlayer was in use) and checks if it's an allowed move.
+ * 2. If the move is allowed it will redraw this.player pixel at the new location using this.world.draw.
+ * @param  {Number}
+ * @return {undefined}
+ */
+Manager.prototype.movePlayer = function(keyCode) {
+    if (this.player.allowedMoves.includes(keyCode)) {
+        this.world.draw('off', this.player.x, this.player.y);
+        this.player.keyMap(keyCode);
+        this.world.draw('on', this.player.x, this.player.y);
+    }
+};
+
+/**
+ * 1. Returns a single-order array of all tiles states in the grid. The data is stored in this.world.world (an object with '0'-padded coordinate keys).
+ * @return {Array}
+ */
+Manager.prototype.query = function() {
+    var returnArray = [];
+    for (var i = 0; i < this.size; i++) {
+        for (var j = 0; j < this.size; j++) {
+            returnArray.push(this.world.world[util.location(this.size, i, j)]);
+        }
+    }
+    // console.log(returnArray);
+    return returnArray;
+};
+
+/**
+ * 1. Adjusts this.player's health and score properties based on scoreObj properties.
+ * 2. Increments a counter of red plants if the scoreObj denotes a negatively valued plant
+ * 3. Updates the DOM using this.world.score to display new game statistics.
+ * @param  {Object}
+ * @return {Number}
+ */
+Manager.prototype.award = function(scoreObj) {
+    this.player.score += scoreObj.value;
+    this.player.health += scoreObj.health;
+    if (scoreObj.value < 0) this.player.reds++;
+    this.world.score(this.player.score, this.player.health, this.player.reds / this.brain.forward_passes, this.player.reward);
+    return scoreObj.reward;
+};
+
+/**
+ * 1. Looks at all plants in this.garden and removes them if they died (aged out).
+ * @return {undefined}
+ */
+Manager.prototype.harvest = function() {
+    for (var plot in this.garden.plants) {
+        if (this.garden.plants.hasOwnProperty(plot)) {
+            var plant = this.garden.plants[plot];
+            if (plant.getAge() === 'off') this.garden.delete(plant.coordinate);
+            this.world.draw(plant.getAge(), plant.x, plant.y);
+        }
+    }
+};
+
+/**
+ * 1. Adds an event listener to the document.
+ * 2. Enables a user to play using the arrow keys.
+ * 3. The listener will handle scoring if a human player lands on a plant using this.award.
+ * @return {undefined}
+ */
+Manager.prototype.observer = function() {
+
+    document.addEventListener('keydown', function(event) {
+        this.movePlayer(event.keyCode);
+        var playerLoc = util.location(this.size, this.player.x, this.player.y);
+        if (this.garden.hasPlant(playerLoc)) {
+            this.award(this.garden.trample(playerLoc));
+        }
+    }.bind(this));
+};
+
+/**
+ * 1. Starts the game. Initially calls step() to immediately render the player and first wave of plants.
+ * 2. Sets the step frequency in this.speed (ms).
+ * 3. Applies an interval to the window which advances the game by one step. The interval may also be utilized to apply a health-decrement game mechanic.
+ * @return {undefined}
+ */
 Manager.prototype.start = function() {
     this.step();
     this.speed = 1;
@@ -403,16 +538,12 @@ Manager.prototype.start = function() {
     }.bind(this), this.speed);
 };
 
-Manager.prototype.step = function() {
-    this.world.draw('on', this.player.x, this.player.y);
-    this.garden.season(1);
-    this.harvest();
-        var move = this.brain.forward(this.query());
-        this.moveBrain(move);
-        this.world.score(this.player.score, this.player.health, this.player.reds / this.brain.forward_passes, this.player.reward);
-        this.brain.visSelf(document.getElementById('brainboard'));
-};
-
+/**
+ * Quits the current game by:
+ * 1. Deletes all plants from this.garden.
+ * 2. Re-draws all plant tiles to be blank.
+ * @return {undefined}
+ */
 Manager.prototype.quit = function() {
     for (var plot in this.garden.plants) {
         this.world.draw('off', this.garden.plants[plot].x, this.garden.plants[plot].y);
@@ -420,103 +551,67 @@ Manager.prototype.quit = function() {
     }
 };
 
-Manager.prototype.moveBrain = function(direction) {
-    this.movePlayer(37 + direction);
-    var playerLoc = util.location(this.size, this.player.x, this.player.y);
-        if (this.garden.hasPlant(playerLoc)) {
-            var reward = this.award(this.garden.trample(playerLoc));
-            this.brain.backward(reward);
-        } else {
-            var reward = -0.02;
-            this.brain.backward(reward);
-        }
-        this.player.reward += reward;
-        console.log('reward', reward);
-};
-
-Manager.prototype.movePlayer = function(keyCode) {
-    if (this.player.allowedMoves.includes(keyCode)) {
-        this.world.draw('off', this.player.x, this.player.y);
-        this.player.keyMap(keyCode);
-        this.world.draw('on', this.player.x, this.player.y);
-    }
-};
-
-Manager.prototype.award = function(scoreObj) {
-    this.player.score += scoreObj.value;
-    this.player.health += scoreObj.health;
-    console.log(scoreObj.worth);
-    if (scoreObj.value < 0) this.player.reds++;
-    this.world.score(this.player.score, this.player.health, this.player.reds / this.brain.forward_passes, this.player.reward);
-    return scoreObj.reward;
-};
-
-Manager.prototype.harvest = function() {
-    for (var plot in this.garden.plants) {
-        if (this.garden.plants.hasOwnProperty(plot)) {
-            var plant = this.garden.plants[plot];
-            if (plant.getAge() === 'off') this.garden.root(plant.coordinate);
-            this.world.draw(plant.getAge(), plant.x, plant.y);
-        }
-    }
-};
-
-Manager.prototype.observer = function() {
-
-    document.addEventListener('keydown', function(event) {
-        this.movePlayer(event.keyCode);
-        var playerLoc = util.location(this.size, this.player.x, this.player.y);
-        if (this.garden.hasPlant(playerLoc)) {
-            this.award(this.garden.trample(playerLoc));
-
-        }
-    }.bind(this));
-
-};
-
-Manager.prototype.query = function() {
-    var returnArray = [];
-    for (var i = 0; i < this.size; i++) {
-        for (var j = 0; j < this.size; j++) {
-            returnArray.push(this.world.world[util.location(this.size, i, j)]);
-        }
-    }
-    // console.log(returnArray);
-    return returnArray;
-};
-
+/**
+ * Starts a new game.
+ * @type {Manager}
+ */
 var newGame = new Manager(5);
 newGame.start();
-
 },{"./neural":5,"./plant.js":6,"./player":7,"./utility":8,"./world":9}],5:[function(require,module,exports){
 var deepqlearn = require("./brain/deepqlearn");
 
 module.exports = function(dim) {
 
+    /**
+     *
+     *
+     *
+     * The Brain Construction.
+     * 1. Arguments[0]: Number of inputs (# of tiles)
+     * 2. Arguments[1]: Number of outputs (# of move options)
+     * 3. Arguments[2]: Options object.
+     * 4. The rewardManual class method
+     * @type {deepqlearn}
+     *
+     *
+     *
+     */
+
+    //Houses the options for defining the deep learning Brain.
     var options = {
         temporal_window: 2
         // experience_size: 5000
     };
 
     var Brain = new deepqlearn.Brain(Math.pow(dim, 2), 4, options); // dim^2 inputs, 4 outputs (0,1)
-    // Brain.learning = true;
-    Brain.rewardManual = {
-        one: .02,
-        two: .04,
-        three: .1,
-        four: .02,
-        five: -1,
-        off: -0.005,
-        on: 0
-    };
+
+    /**
+     * [Class method which defines rewards given to brain instances. THIS IS NOT CURRENTLY USED.]
+     * @type {Object}
+     */
+    // Brain.rewardManual = {
+    //     one: .02,
+    //     two: .04,
+    //     three: .1,
+    //     four: .02,
+    //     five: -1,
+    //     off: -0.005,
+    //     on: 0
+    // };
+
+    /**
+     * 1. Class method which returns the reward corresponding to a tile state (string)
+     * @param  {String}
+     * @return {Number}
+     */
     Brain.rewardMe = function(string) {
         return Brain.rewardManual[string];
     };
 
+    //Module return.
     return Brain;
 
 };
-
 
 },{"./brain/deepqlearn":2}],6:[function(require,module,exports){
 'use strict';
@@ -524,7 +619,19 @@ var util = require('./utility');
 
 module.exports = function(worldSize, player) {
 
-    function Plant(worldSize) {
+    /**
+     *
+     *
+     *
+     * The Plant Constructor.
+     * 1. Each plant is initialized on a random coordinate.
+     * 2. Each plant's location is accessible by x AND y properties or a '0'-padded string property, 'this.coordinate'.
+     * @param {Number}
+     *
+     *
+     *
+     */
+    function Plant() {
         this.x = util.randNum(worldSize);
         this.y = util.randNum(worldSize);
         this.coordinate = util.location(worldSize, this.x, this.y);
@@ -532,10 +639,19 @@ module.exports = function(worldSize, player) {
         // console.log('added plant');
     }
 
+    /**
+     * 1. Ages the current plant once. If this.plant's current age is five, however, the plant age is set to 0 as an indicator of plant death.
+     * @return {undefined}
+     */
     Plant.prototype.ageOnce = function() {
         this.age = this.age > 4 ? 0 : this.age + 1;
     };
 
+    /**
+     * 1. This object defines the CSS class, game value, and returned health of a plant (these are functions of plant age).
+     * 2. This property currently overrides the brain's rewardManual object.
+     * @type {Object}
+     */
     Plant.prototype.manual = {
         1: {
             class: 'one',
@@ -571,48 +687,81 @@ module.exports = function(worldSize, player) {
             class: 'off',
             worth: 0,
             health: 0,
-            reward: 0
+            reward: -0.05
         }
     };
 
+    /**
+     * 1. Helper function which returns this.plant's age.
+     * @return {String}
+     */
     Plant.prototype.getAge = function() {
         return this.manual[this.age].class;
     };
 
+    /**
+     * 1. Helper function which returns this.plant's health return.
+     * @return {Number}
+     */
     Plant.prototype.getNutrition = function() {
         return this.manual[this.age].health;
     };
 
+    /**
+     * 1. Helper function which returns this.plant's point value (for game scoring).
+     * @return {Number}
+     */
     Plant.prototype.reap = function() {
         return this.manual[this.age].worth;
     };
 
+    /**
+     * 1. Helper function which returns this.plant's reward (for brain learning).
+     * @return {Number}
+     */
     Plant.prototype.brainFood = function() {
         return this.manual[this.age].reward;
     };
 
-    //
-    //
-    //
-
-    function Garden(voracity) {
+    /**
+     *
+     *
+     *
+     * The Garden Constructor.
+     * 2. Accepts a number of steps required for plants to age, 'stepsToAge'.
+     * @param {Number}
+     *
+     *
+     *
+     */
+    function Garden(stepsToAge) {
         this.plants = {};
-        this.voracity = voracity;
-        this.tracker = 0;
+        this.stepsToAge = stepsToAge;
+        this.tracker = 0; //Used in tandem with this.stepsToAge to manage plant aging frequency.
     }
 
-    Garden.prototype.season = function(num) {
-
-        if (this.tracker < this.voracity) {
+    /**
+     * 1. Manages the frequency of adding and aging plants. This function tunes the ratio of Player moves to plant turns (adding and aging).
+     * @param  {Number}
+     * @return {undefined}
+     */
+    Garden.prototype.season = function(numberOfNewPlants) {
+        if (this.tracker < this.stepsToAge) {
             this.tracker++;
         } else {
             this.tracker = 0;
-            this.addPlants(num);
+            this.addPlants(numberOfNewPlants);
             this.agePlants();
         }
 
     };
 
+    /**
+     * 1. Adds 'num' number of plants to this.garden at random locations.
+     * 2. A plant addition will be SKIPPED if the chosen location is occupied by any object.
+     * @param {Number}
+     * @return {undefined}
+     */
     Garden.prototype.addPlants = function(num) {
         //Adds 'num' number of plants to the garden
         for (var i = 0; i < num; i++) {
@@ -625,8 +774,11 @@ module.exports = function(worldSize, player) {
         }
     };
 
+    /**
+     * 1. Ages all plants in this.garden
+     * @return {undefined}
+     */
     Garden.prototype.agePlants = function() {
-        //Ages all of the plants in the garden
         for (var plot in this.plants) {
             if (this.plants.hasOwnProperty(plot)) {
                 var selectedPlant = this.plants[plot];
@@ -635,16 +787,27 @@ module.exports = function(worldSize, player) {
         }
     };
 
-    Garden.prototype.hasPlant = function(coord) {
-        return this.plants.hasOwnProperty(coord);
+    /**
+     * 1. Helper function which checks for a plant in this.garden at the specified coordinate.
+     * @param  {String}
+     * @return {Boolean}
+     */
+    Garden.prototype.hasPlant = function(coordinate) {
+        return this.plants.hasOwnProperty(coordinate);
     };
 
-    Garden.prototype.trample = function(coord) {
-        //Returns points and garbage collects a stepped-on plant
-        var plantWorth = this.plants[coord].reap();
-        var plantReward = this.plants[coord].brainFood();
-        var playerHealth = this.plants[coord].getNutrition();
-        this.root(coord);
+    /**
+     * 1. Caches the plant value, returned health, and plant reward.
+     * 2. Deletes the plant from this.garden at the specified coordinate.
+     * 3. Returns an object of the cached values for later scoring.
+     * @param  {String}
+     * @return {Object}
+     */
+    Garden.prototype.trample = function(coordinate) {
+        var plantWorth = this.plants[coordinate].reap();
+        var plantReward = this.plants[coordinate].brainFood();
+        var playerHealth = this.plants[coordinate].getNutrition();
+        this.delete(coordinate);
         return {
             value: plantWorth,
             health: playerHealth,
@@ -652,8 +815,14 @@ module.exports = function(worldSize, player) {
         };
     };
 
-    Garden.prototype.root = function(coord) {
-        delete this.plants[coord];
+    /**
+     * 1. Deletes the plant from this.garden at the specified coordinate.
+     * 2. Accepts a '0'-padded string coordinate (see util.location).
+     * @param  {String}
+     * @return {undefined}
+     */
+    Garden.prototype.delete = function(coordinate) {
+        delete this.plants[coordinate];
     };
 
     return {
@@ -661,12 +830,23 @@ module.exports = function(worldSize, player) {
         Garden
     };
 };
+
 },{"./utility":8}],7:[function(require,module,exports){
 'use strict';
 var util = require('./utility');
 
 module.exports = function(dim) {
 
+    /**
+     *
+     *
+     *
+     * The Player Constructor.
+     * @param {Number}
+     *
+     *
+     *
+     */
     var Player = function(startingHP) {
         this.worldSize = dim;
         this.health = startingHP;
@@ -675,11 +855,16 @@ module.exports = function(dim) {
         this.reward = 0;
         this.x = 0;
         this.y = 0;
-        this.allowedMoves = [37, 38, 39, 40];
+        this.allowedMoves = [37, 38, 39, 40]; //Arrow key keyCodes - relic from human keyboard controls.
         this.loc = util.location(10, this.x, this.y);
 
     };
 
+    /**
+     * 1. Adjusts this.player 'x' and 'y' properties based on keyCode argument.
+     * @param  {Number}
+     * @return {Number}
+     */
     Player.prototype.keyMap = function(code) {
         var keyMappings = {
             37: function() {
@@ -700,16 +885,26 @@ module.exports = function(dim) {
             }
         };
 
+        //Check if the code corresponds to a valid move
         if (keyMappings[code.toString()]) {
             keyMappings[code.toString()].bind(this)();
         }
     };
 
+    //Module return.
     return Player;
 };
 
 },{"./utility":8}],8:[function(require,module,exports){
 module.exports = {
+    /**
+     * 1. Helper function which returns a '0'-padded coordinate string of the provided x and y number coordinates.
+     * 2. Requires the grid width as the first argument.
+     * @param  {Number}
+     * @param  {Number}
+     * @param  {Number}
+     * @return {String}
+     */
     location: function(dim, x, y) {
         function stringify(num) {
             num = num.toString().split('');
@@ -720,66 +915,106 @@ module.exports = {
         }
         return stringify(x) + stringify(y);
     },
+
+    /**
+     * 1. Helper function which provides a random integer between 0 and the specified max - 1.
+     * @param  {Number}
+     * @return {Number}
+     */
     randNum: function(max) {
         return Math.floor(Math.random() * max);
     }
 };
 
 },{}],9:[function(require,module,exports){
-
 var util = require('./utility');
 
 module.exports = function(size) {
 
+    /**
+     *
+     *
+     *
+     * The World Constructor.
+     * 1. Has a 'world' property (object) which tracks the state of every tile.
+     * 2. A new game board (DOM element) is rendered upon instantiation.
+     *
+     *
+     */
+    function World() {
+        this.world = this.createWorld(size);
+        this.size = size;
+        //Creates the HTML Board
+        this.boardMaker(size);
 
-function World() {
-	this.world = this.createWorld(size);
-	this.size = size;
-	//Creates the HTML Board
-	this.boardMaker(size);
-
-}
-
-World.prototype.draw = function(value, x, y) {
-    this.world[util.location(size, x, y)] = value;
-    document.getElementById(util.location(size, x, y)).className = 'tile ' + String(value);
-};
-
-World.prototype.createWorld = function() {
-    var returnObj = {};
-    for (var i = 0; i < size; i++) {
-        for (var j = 0; j < size; j++) {
-            returnObj[util.location(size, j, i)] = 0;
-        }
     }
-    return returnObj;
-};
 
-World.prototype.boardMaker = function() {
-    var boardTableBody = document.createElement('tbody');
-    var boardTableHTML = '';
+    /**
+     * 1. Updates the tile on the DOM board (coordinate [x,y]) to have a class of 'value'.
+     * @param  {String}
+     * @param  {Number}
+     * @param  {Number}
+     * @return {undefined}
+     */
+    World.prototype.draw = function(value, x, y) {
+        this.world[util.location(size, x, y)] = value;
+        document.getElementById(util.location(size, x, y)).className = 'tile ' + String(value);
+    };
 
-    for (var i = 0; i < size; i++) {
-        boardTableHTML += '<tr>';
-        for (var j = 0; j < size; j++) {
-            boardTableHTML += '<td id="' + util.location(size, j, i) + '" class="tile off"></td>';
+    /**
+     * 1. Creates this.world, the object which tracks game state.
+     * 2. The keys are '0'-padded string representations of coordinates (see util.location).
+     * @type {Object}
+     * @return {Object}
+     */
+    World.prototype.createWorld = function() {
+        var returnObj = {};
+        for (var i = 0; i < size; i++) {
+            for (var j = 0; j < size; j++) {
+                returnObj[util.location(size, j, i)] = 0;
+            }
         }
-        boardTableHTML += '</tr>';
-    }
-    boardTableBody.innerHTML = boardTableHTML;
-    var boardTable = document.getElementById('gameboard');
-    boardTable.appendChild(boardTableBody);
-};
+        return returnObj;
+    };
 
-World.prototype.score = function(score, health, reds, reward) {
-	document.getElementById('score').textContent = String(score);
-	document.getElementById('health').textContent = String(health);
-    document.getElementById('reds').textContent = String(reds);
-    document.getElementById('reward').textContent = String(reward);
-};
+    /**
+     * 1. Creates the board/grid on the DOM.
+     * @return {undefined}
+     */
+    World.prototype.boardMaker = function() {
+        var boardTableBody = document.createElement('tbody');
+        var boardTableHTML = '';
 
-	return World;
-};
+        for (var i = 0; i < size; i++) {
+            boardTableHTML += '<tr>';
+            for (var j = 0; j < size; j++) {
+                boardTableHTML += '<td id="' + util.location(size, j, i) + '" class="tile off"></td>';
+            }
+            boardTableHTML += '</tr>';
+        }
+        boardTableBody.innerHTML = boardTableHTML;
+        var boardTable = document.getElementById('gameboard');
+        boardTable.appendChild(boardTableBody);
+    };
 
+
+    /**
+     * 1. Updates the game's scoreboard on the DOM to the provided values.
+     * @param  {Number} [score: The current game score.]
+     * @param  {Number} [health: The current player health.]
+     * @param  {Number} [reds: Ratio of red plants to total steps.]
+     * @param  {Number} [reward: Sum total reward given to the brain.]
+     * @return {Number}
+     */
+    World.prototype.score = function(score, health, reds, reward) {
+        document.getElementById('score').textContent = String(score);
+        document.getElementById('health').textContent = String(health);
+        document.getElementById('reds').textContent = String(reds);
+        document.getElementById('reward').textContent = String(reward);
+    };
+
+    //Module return.
+    return World;
+};
 
 },{"./utility":8}]},{},[4]);
