@@ -34,7 +34,7 @@ var cnnutil = require("./util");
     this.gamma = typeof opt.gamma !== 'undefined' ? opt.gamma : 0.8;
     
     // number of steps we will learn for
-    this.learning_steps_total = typeof opt.learning_steps_total !== 'undefined' ? opt.learning_steps_total : 500;
+    this.learning_steps_total = typeof opt.learning_steps_total !== 'undefined' ? opt.learning_steps_total : 5000;
     // how many steps of the above to perform only random actions (in the beginning)?
     this.learning_steps_burnin = typeof opt.learning_steps_burnin !== 'undefined' ? opt.learning_steps_burnin : 3000;
     // what epsilon value do we bottom out on? 0.0 => purely deterministic policy at end
@@ -155,7 +155,6 @@ var cnnutil = require("./util");
     getNetInput: function(xt) {
       // return s = (x,a,x,a,x,a,xt) state vector. 
       // It's a concatenation of last window_size (x,a) pairs and current state x
-      if (this.age > 1006) debugger;
       var w = [];
       w = w.concat(xt); // start with current state
       // and now go backwards and append states and actions from history temporal_window times

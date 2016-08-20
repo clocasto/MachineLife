@@ -164,9 +164,7 @@ Manager.prototype.observer = function() {
  * @return {undefined}
  */
 Manager.prototype.start = function() {
-    // this.step();
-    this.speed = 1;
-    // this.observer();
+    this.speed = 0.1;
 
     setInterval(function() {
         // if (this.player.health-- > 0) this.step();
@@ -174,6 +172,7 @@ Manager.prototype.start = function() {
         //     this.quit();
         // }
         this.step();
+        if (this.brain.age > 8000) this.brain.learning = false;
 
     }.bind(this), this.speed);
 

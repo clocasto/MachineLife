@@ -2235,7 +2235,7 @@ var cnnutil = require("./util");
     this.gamma = typeof opt.gamma !== 'undefined' ? opt.gamma : 0.8;
     
     // number of steps we will learn for
-    this.learning_steps_total = typeof opt.learning_steps_total !== 'undefined' ? opt.learning_steps_total : 500;
+    this.learning_steps_total = typeof opt.learning_steps_total !== 'undefined' ? opt.learning_steps_total : 5000;
     // how many steps of the above to perform only random actions (in the beginning)?
     this.learning_steps_burnin = typeof opt.learning_steps_burnin !== 'undefined' ? opt.learning_steps_burnin : 3000;
     // what epsilon value do we bottom out on? 0.0 => purely deterministic policy at end
@@ -2356,7 +2356,6 @@ var cnnutil = require("./util");
     getNetInput: function(xt) {
       // return s = (x,a,x,a,x,a,xt) state vector. 
       // It's a concatenation of last window_size (x,a) pairs and current state x
-      if (this.age > 1006) debugger;
       var w = [];
       w = w.concat(xt); // start with current state
       // and now go backwards and append states and actions from history temporal_window times
@@ -2730,9 +2729,7 @@ Manager.prototype.observer = function() {
  * @return {undefined}
  */
 Manager.prototype.start = function() {
-    // this.step();
-    this.speed = 1;
-    // this.observer();
+    this.speed = 0.1;
 
     setInterval(function() {
         // if (this.player.health-- > 0) this.step();
@@ -2740,6 +2737,7 @@ Manager.prototype.start = function() {
         //     this.quit();
         // }
         this.step();
+        if (this.brain.age > 8000) this.brain.learning = false;
 
     }.bind(this), this.speed);
 
@@ -2789,7 +2787,14 @@ module.exports = function(dim) {
 
     //Houses the options for defining the deep learning Brain.
     var options = {
-        temporal_window: 2
+        epsilon_min: 0.05,
+        epsilon_test_time: 0.01,
+        experience_size: 30000,
+        gamma: 0.7,
+        learning_steps_burnin: 3000,
+        learning_steps_total: 200000,
+        start_learn_threshhold: 1000,
+        temporal_window: 1
         // experience_size: 5000
     };
 
@@ -3173,7 +3178,7 @@ module.exports = function(size) {
     World.prototype.update = function(value, x, y) {
         var coordinate = util.location(size, x, y);
         this.world[coordinate] = value;
-        document.getElementById(coordinate).className = 'tile ' + String(this.manual[value]);
+        // document.getElementById(coordinate).className = 'tile ' + String(this.manual[value]);
     };
 
     /**
