@@ -28,7 +28,7 @@ module.exports = function(worldSize, player) {
      * @return {undefined}
      */
     Plant.prototype.ageOnce = function() {
-        this.age = this.age > 4 ? 0 : this.age + 1;
+        this.age++;
     };
 
     /**
@@ -38,37 +38,31 @@ module.exports = function(worldSize, player) {
      */
     Plant.prototype.manual = {
         1: {
-            class: 'one',
             worth: 1,
             health: 0,
             reward: 0.2
         },
         2: {
-            class: 'two',
             worth: 2,
             health: 0,
             reward: 0.4
         },
         3: {
-            class: 'three',
             worth: 4,
             health: 1,
             reward: 1
         },
         4: {
-            class: 'four',
             worth: 1,
             health: 0,
             reward: 0.2
         },
         5: {
-            class: 'five',
             worth: -5,
             health: -1,
             reward: -1
         },
         0: {
-            class: 'off',
             worth: 0,
             health: 0,
             reward: -0.05
@@ -80,7 +74,7 @@ module.exports = function(worldSize, player) {
      * @return {String}
      */
     Plant.prototype.getAge = function() {
-        return this.manual[this.age].class;
+        return this.age;
     };
 
     /**

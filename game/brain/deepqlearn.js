@@ -1,9 +1,10 @@
 var deepqlearn = deepqlearn || { REVISION: 'ALPHA' };
-var convnetjs = require("./convnet-min");
+var convnetjs = require("./convnet");
 var cnnutil = require("./util");
 
 (function(global) {
   "use strict";
+  window.counter = 0;
   
   // An agent is in state0 and does action0
   // environment then assigns reward0 and provides new state, state1
@@ -143,6 +144,7 @@ var cnnutil = require("./util");
       // and return the argmax action and its value
       var svol = new convnetjs.Vol(1, 1, this.net_inputs);
       svol.w = s;
+      if (this.age > 1006) debugger;
       var action_values = this.value_net.forward(svol);
       var maxk = 0; 
       var maxval = action_values.w[0];
@@ -253,7 +255,9 @@ var cnnutil = require("./util");
           var maxact = this.policy(e.state1);
           var r = e.reward0 + this.gamma * maxact.value;
           var ystruct = {dim: e.action0, val: r};
+          if (this.age > 1006) debugger;
           var loss = this.tdtrainer.train(x, ystruct);
+          console.log('counter:',++counter,'loss:',loss['cost_loss'],'l1:',loss['l1_decay_loss'],'l2:',loss['l2_decay_loss']);
           avcost += loss.loss;
         }
         avcost = avcost/this.tdtrainer.batch_size;
