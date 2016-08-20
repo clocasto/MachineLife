@@ -52,7 +52,8 @@ Manager.prototype.step = function() {
     this.harvest();
 
     //Handling brain movement and scoring below.
-    var move = this.brain.forward(this.query());
+    var query = this.query();
+    var move = this.brain.forward(query);
     this.moveBrain(move);
     this.world.score(this.player.score, this.player.health, this.player.reds / this.brain.forward_passes, this.player.reward);
     this.brain.visSelf(document.getElementById('brainboard')); //Displays brain statistics.
@@ -167,19 +168,18 @@ Manager.prototype.start = function() {
     this.speed = 1;
     // this.observer();
 
-    // setInterval(function() {
-    //     // if (this.player.health-- > 0) this.step();
-    //     // else {
-    //     //     this.quit();
-    //     // }
-    //     this.step();
-
-    // }.bind(this), this.speed);
-
-    while (this.brain.age < 1025) {
+    setInterval(function() {
+        // if (this.player.health-- > 0) this.step();
+        // else {
+        //     this.quit();
+        // }
         this.step();
-        console.log('Age:',this.brain.age)
-    }
+
+    }.bind(this), this.speed);
+
+    // while (this.brain.age < 20000) {
+    //     this.step();
+    // }
 };
 
 /**

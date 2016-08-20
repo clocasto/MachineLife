@@ -2345,7 +2345,6 @@ var cnnutil = require("./util");
       // and return the argmax action and its value
       var svol = new convnetjs.Vol(1, 1, this.net_inputs);
       svol.w = s;
-      if (this.age > 1006) debugger;
       var action_values = this.value_net.forward(svol);
       var maxk = 0; 
       var maxval = action_values.w[0];
@@ -2368,7 +2367,7 @@ var cnnutil = require("./util");
         // we dont want weight regularization to undervalue this information, as it only exists once
         var action1ofk = new Array(this.num_actions);
         for(var q=0;q<this.num_actions;q++) action1ofk[q] = 0.0;
-        action1ofk[this.action_window[n-1-k]] = 1.0*this.num_states;
+        action1ofk[this.action_window[n-1-k]] = 1.0; //*this.num_states;
         w = w.concat(action1ofk);
       }
       return w;
@@ -2456,9 +2455,8 @@ var cnnutil = require("./util");
           var maxact = this.policy(e.state1);
           var r = e.reward0 + this.gamma * maxact.value;
           var ystruct = {dim: e.action0, val: r};
-          if (this.age > 1006) debugger;
           var loss = this.tdtrainer.train(x, ystruct);
-          console.log('counter:',++counter,'loss:',loss['cost_loss'],'l1:',loss['l1_decay_loss'],'l2:',loss['l2_decay_loss']);
+          // console.log('counter:',++counter,'loss:',loss['cost_loss'],'l1:',loss['l1_decay_loss'],'l2:',loss['l2_decay_loss']);
           avcost += loss.loss;
         }
         avcost = avcost/this.tdtrainer.batch_size;
@@ -2619,7 +2617,8 @@ Manager.prototype.step = function() {
     this.harvest();
 
     //Handling brain movement and scoring below.
-    var move = this.brain.forward(this.query());
+    var query = this.query();
+    var move = this.brain.forward(query);
     this.moveBrain(move);
     this.world.score(this.player.score, this.player.health, this.player.reds / this.brain.forward_passes, this.player.reward);
     this.brain.visSelf(document.getElementById('brainboard')); //Displays brain statistics.
@@ -2734,19 +2733,18 @@ Manager.prototype.start = function() {
     this.speed = 1;
     // this.observer();
 
-    // setInterval(function() {
-    //     // if (this.player.health-- > 0) this.step();
-    //     // else {
-    //     //     this.quit();
-    //     // }
-    //     this.step();
-
-    // }.bind(this), this.speed);
-
-    while (this.brain.age < 1025) {
+    setInterval(function() {
+        // if (this.player.health-- > 0) this.step();
+        // else {
+        //     this.quit();
+        // }
         this.step();
-        console.log('Age:',this.brain.age)
-    }
+
+    }.bind(this), this.speed);
+
+    // while (this.brain.age < 20000) {
+    //     this.step();
+    // }
 };
 
 /**
@@ -3058,8 +3056,8 @@ module.exports = function(dim) {
         this.reds = 0;
         this.score = 0;
         this.reward = 0;
-        this.x = 0;
-        this.y = 0;
+        this.x = Math.floor(dim / 2);
+        this.y = Math.floor(dim / 2);
         this.allowedMoves = [37, 38, 39, 40]; //Arrow key keyCodes - relic from human keyboard controls.
         this.loc = util.location(10, this.x, this.y);
 

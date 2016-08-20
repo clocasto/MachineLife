@@ -144,7 +144,6 @@ var cnnutil = require("./util");
       // and return the argmax action and its value
       var svol = new convnetjs.Vol(1, 1, this.net_inputs);
       svol.w = s;
-      if (this.age > 1006) debugger;
       var action_values = this.value_net.forward(svol);
       var maxk = 0; 
       var maxval = action_values.w[0];
@@ -167,7 +166,7 @@ var cnnutil = require("./util");
         // we dont want weight regularization to undervalue this information, as it only exists once
         var action1ofk = new Array(this.num_actions);
         for(var q=0;q<this.num_actions;q++) action1ofk[q] = 0.0;
-        action1ofk[this.action_window[n-1-k]] = 1.0*this.num_states;
+        action1ofk[this.action_window[n-1-k]] = 1.0; //*this.num_states;
         w = w.concat(action1ofk);
       }
       return w;
@@ -255,9 +254,8 @@ var cnnutil = require("./util");
           var maxact = this.policy(e.state1);
           var r = e.reward0 + this.gamma * maxact.value;
           var ystruct = {dim: e.action0, val: r};
-          if (this.age > 1006) debugger;
           var loss = this.tdtrainer.train(x, ystruct);
-          console.log('counter:',++counter,'loss:',loss['cost_loss'],'l1:',loss['l1_decay_loss'],'l2:',loss['l2_decay_loss']);
+          // console.log('counter:',++counter,'loss:',loss['cost_loss'],'l1:',loss['l1_decay_loss'],'l2:',loss['l2_decay_loss']);
           avcost += loss.loss;
         }
         avcost = avcost/this.tdtrainer.batch_size;
