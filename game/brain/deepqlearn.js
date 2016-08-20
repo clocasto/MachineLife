@@ -155,6 +155,7 @@ var cnnutil = require("./util");
     getNetInput: function(xt) {
       // return s = (x,a,x,a,x,a,xt) state vector. 
       // It's a concatenation of last window_size (x,a) pairs and current state x
+      if (this.age > 1006) debugger;
       var w = [];
       w = w.concat(xt); // start with current state
       // and now go backwards and append states and actions from history temporal_window times
@@ -166,7 +167,7 @@ var cnnutil = require("./util");
         // we dont want weight regularization to undervalue this information, as it only exists once
         var action1ofk = new Array(this.num_actions);
         for(var q=0;q<this.num_actions;q++) action1ofk[q] = 0.0;
-        action1ofk[this.action_window[n-1-k]] = 1.0; //*this.num_states;
+        action1ofk[this.action_window[n-1-k]] = 1.0*this.num_states;
         w = w.concat(action1ofk);
       }
       return w;
