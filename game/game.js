@@ -42,17 +42,18 @@ var Manager = function(dimension) {
  * 1. Advances the game by one step (time unit).
  * 2. Draws the player pixel.
  * 3. Calls this.garden's season method which attempts to spawn a specified number of plants and age them.
- * 4. Deletes any dead plants from this.garden and re-draws blank tiles using this.world.draw.
+ * 4. Deletes any dead plants from this.garden and re-draws blank tiles using this.world.update.
  * @return {undefined}
  * @method  {function}
  */
 Manager.prototype.step = function() {
-    this.world.draw('on', this.player.x, this.player.y);
+    this.world.update(7, this.player.x, this.player.y);
     this.garden.season(1);
     this.harvest();
 
     //Handling brain movement and scoring below.
-    var move = this.brain.forward(this.query());
+    var query = this.query();
+    var move = this.brain.forward(query);
     this.moveBrain(move);
     this.world.score(this.player.score, this.player.health, this.player.reds / this.brain.forward_passes, this.player.reward);
     this.brain.visSelf(document.getElementById('brainboard')); //Displays brain statistics.
@@ -73,21 +74,21 @@ Manager.prototype.moveBrain = function(direction) {
         var reward = -0.02;
         this.brain.backward(reward);
     }
-    console.log(reward);
+    // console.log(reward);
     this.player.reward += reward;
 };
 
 /**
  * 1. Accepts a keycode (relic from when Manager.prototype.movePlayer was in use) and checks if it's an allowed move.
- * 2. If the move is allowed it will redraw this.player pixel at the new location using this.world.draw.
+ * 2. If the move is allowed it will redraw this.player pixel at the new location using this.world.update.
  * @param  {Number}
  * @return {undefined}
  */
 Manager.prototype.movePlayer = function(keyCode) {
     if (this.player.allowedMoves.includes(keyCode)) {
-        this.world.draw('off', this.player.x, this.player.y);
+        this.world.update(0, this.player.x, this.player.y);
         this.player.keyMap(keyCode);
-        this.world.draw('on', this.player.x, this.player.y);
+        this.world.update(7, this.player.x, this.player.y);
     }
 };
 
@@ -96,12 +97,16 @@ Manager.prototype.movePlayer = function(keyCode) {
  * @return {Array}
  */
 Manager.prototype.query = function() {
-    var returnArray = [];
+    var returnArray = [], normVector;
     for (var i = 0; i < this.size; i++) {
         for (var j = 0; j < this.size; j++) {
             returnArray.push(this.world.world[util.location(this.size, i, j)]);
         }
     }
+    normVector = returnArray.reduce(function(startVal, nextVal){
+        return startVal + Math.pow(nextVal, 2);
+    });
+    returnArray = returnArray.map(ele => ele / Math.pow(normVector, 0.5));
     // console.log(returnArray);
     return returnArray;
 };
@@ -129,8 +134,8 @@ Manager.prototype.harvest = function() {
     for (var plot in this.garden.plants) {
         if (this.garden.plants.hasOwnProperty(plot)) {
             var plant = this.garden.plants[plot];
-            if (plant.getAge() === 'off') this.garden.delete(plant.coordinate);
-            this.world.draw(plant.getAge(), plant.x, plant.y);
+            if (plant.getAge() > 5) this.garden.delete(plant.coordinate);
+            this.world.update(plant.getAge(), plant.x, plant.y);
         }
     }
 };
@@ -159,9 +164,7 @@ Manager.prototype.observer = function() {
  * @return {undefined}
  */
 Manager.prototype.start = function() {
-    this.step();
-    this.speed = 1;
-    // this.observer();
+    this.speed = 0.1;
 
     setInterval(function() {
         // if (this.player.health-- > 0) this.step();
@@ -169,8 +172,13 @@ Manager.prototype.start = function() {
         //     this.quit();
         // }
         this.step();
+        if (this.brain.age > 8000) this.brain.learning = false;
 
     }.bind(this), this.speed);
+
+    // while (this.brain.age < 20000) {
+    //     this.step();
+    // }
 };
 
 /**
@@ -181,7 +189,7 @@ Manager.prototype.start = function() {
  */
 Manager.prototype.quit = function() {
     for (var plot in this.garden.plants) {
-        this.world.draw('off', this.garden.plants[plot].x, this.garden.plants[plot].y);
+        this.world.update(0, this.garden.plants[plot].x, this.garden.plants[plot].y);
         this.garden.root(plot);
     }
 };

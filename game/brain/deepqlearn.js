@@ -1,9 +1,10 @@
 var deepqlearn = deepqlearn || { REVISION: 'ALPHA' };
-var convnetjs = require("./convnet-min");
+var convnetjs = require("./convnet");
 var cnnutil = require("./util");
 
 (function(global) {
   "use strict";
+  window.counter = 0;
   
   // An agent is in state0 and does action0
   // environment then assigns reward0 and provides new state, state1
@@ -33,7 +34,7 @@ var cnnutil = require("./util");
     this.gamma = typeof opt.gamma !== 'undefined' ? opt.gamma : 0.8;
     
     // number of steps we will learn for
-    this.learning_steps_total = typeof opt.learning_steps_total !== 'undefined' ? opt.learning_steps_total : 500;
+    this.learning_steps_total = typeof opt.learning_steps_total !== 'undefined' ? opt.learning_steps_total : 5000;
     // how many steps of the above to perform only random actions (in the beginning)?
     this.learning_steps_burnin = typeof opt.learning_steps_burnin !== 'undefined' ? opt.learning_steps_burnin : 3000;
     // what epsilon value do we bottom out on? 0.0 => purely deterministic policy at end
@@ -254,6 +255,7 @@ var cnnutil = require("./util");
           var r = e.reward0 + this.gamma * maxact.value;
           var ystruct = {dim: e.action0, val: r};
           var loss = this.tdtrainer.train(x, ystruct);
+          // console.log('counter:',++counter,'loss:',loss['cost_loss'],'l1:',loss['l1_decay_loss'],'l2:',loss['l2_decay_loss']);
           avcost += loss.loss;
         }
         avcost = avcost/this.tdtrainer.batch_size;

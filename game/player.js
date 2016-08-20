@@ -19,8 +19,8 @@ module.exports = function(dim) {
         this.reds = 0;
         this.score = 0;
         this.reward = 0;
-        this.x = 0;
-        this.y = 0;
+        this.x = Math.floor(dim / 2);
+        this.y = Math.floor(dim / 2);
         this.allowedMoves = [37, 38, 39, 40]; //Arrow key keyCodes - relic from human keyboard controls.
         this.loc = util.location(10, this.x, this.y);
 

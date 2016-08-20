@@ -17,7 +17,17 @@ module.exports = function(size) {
         this.size = size;
         //Creates the HTML Board
         this.boardMaker(size);
+        this.manual = {
+            0: 'off',
+            1: 'one',
+            2: 'two',
+            3: 'three',
+            4: 'four',
+            5: 'five',
+            6: 'off',
+            7: 'on'
 
+        };
     }
 
     /**
@@ -27,9 +37,10 @@ module.exports = function(size) {
      * @param  {Number}
      * @return {undefined}
      */
-    World.prototype.draw = function(value, x, y) {
-        this.world[util.location(size, x, y)] = value;
-        document.getElementById(util.location(size, x, y)).className = 'tile ' + String(value);
+    World.prototype.update = function(value, x, y) {
+        var coordinate = util.location(size, x, y);
+        this.world[coordinate] = value;
+        // document.getElementById(coordinate).className = 'tile ' + String(this.manual[value]);
     };
 
     /**
