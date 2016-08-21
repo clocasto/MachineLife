@@ -67,7 +67,10 @@ Manager.prototype.step = function() {
 Manager.prototype.moveBrain = function(direction) {
     this.movePlayer(37 + direction);
     var playerLoc = util.location(this.size, this.player.x, this.player.y);
+    let proxReward = proximityToGreenAward(playerLoc, this.size)
+    // let proxPenalty = proximityToRedPenalty(playerLoc, this.size)
     var reward = 0;
+    reward -= proxReward;
     if (this.garden.hasPlant(playerLoc)) {
         reward = this.award(this.garden.trample(playerLoc));
         this.wipePlants();
@@ -83,6 +86,33 @@ Manager.prototype.wipePlants = function() {
         this.garden.delete(plant.coordinate);
     }
 };
+
+
+
+
+// function proximityToRedPenalty(playerLocation, worldSize){
+//   worldSize = worldSize - 1
+//   let red = document.getElementsByClassName('five')[0]
+//   let redCoordinates = red.id.split('');
+//   let playerCoordinates = playerLocation.split('');
+//   let addedSquares = Math.pow((+redCoordinates[0] - +playerCoordinates[0]), 2) + Math.pow(+playerCoordinates[1] - +redCoordinates[1], 2)
+//   let distanceToRed = Math.sqrt(addedSquares);
+//   let maxMapDistance = Math.sqrt(Math.pow(+worldSize, 2) + Math.pow(+worldSize, 2))
+//   return (distanceToRed/maxMapDistance) //the closer we are the higher this value is.  -0.2 so we value close to green > far from red
+// }
+
+
+//won't work on 10x10 or more grid.
+function proximityToGreenAward(playerLocation, worldSize){
+  worldSize = worldSize - 1
+  let green = document.getElementsByClassName('three')[0]
+  let greenCoordinates = green.id.split('');
+  let playerCoordinates = playerLocation.split('');
+  let addedSquares = Math.pow((+greenCoordinates[0] - +playerCoordinates[0]), 2) + Math.pow(+greenCoordinates[1] - +playerCoordinates[1], 2)
+  let distanceToGreen = Math.sqrt(addedSquares);
+  let maxMapDistance = Math.sqrt(Math.pow(+worldSize, 2) + Math.pow(+worldSize, 2))
+  return distanceToGreen/maxMapDistance //the close we are the lower this value is, so we have to subtract. MAX of this value is 1
+}
 
 /**
  * 1. Accepts a keycode (relic from when Manager.prototype.movePlayer was in use) and checks if it's an allowed move.
@@ -178,7 +208,7 @@ Manager.prototype.start = function() {
         //     this.quit();
         // }
         this.step();
-        if (this.brain.age > 8000) this.brain.learning = false;
+        //if (this.brain.age > 10000) this.brain.learning = false;
 
     }.bind(this), this.speed);
 
@@ -204,5 +234,5 @@ Manager.prototype.quit = function() {
  * Starts a new game.
  * @type {Manager}
  */
-var newGame = new Manager(5);
+var newGame = new Manager(6);
 newGame.start();

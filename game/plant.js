@@ -33,27 +33,27 @@ module.exports = function(worldSize, player) {
         1: {
             worth: 1,
             health: 0,
-            reward: 0.2
+            reward: 5
         },
         2: {
             worth: 2,
             health: 0,
-            reward: 0.4
+            reward: 5
         },
         3: {
             worth: 4,
-            health: 1,
-            reward: 1
+            health: 0,
+            reward: 5
         },
         4: {
             worth: 1,
             health: 0,
-            reward: 0.2
+            reward: 5
         },
         5: {
             worth: -5,
             health: -1,
-            reward: -1
+            reward: -100
         }
     };
 
