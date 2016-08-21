@@ -166,7 +166,7 @@ var cnnutil = require("./util");
         // we dont want weight regularization to undervalue this information, as it only exists once
         var action1ofk = new Array(this.num_actions);
         for(var q=0;q<this.num_actions;q++) action1ofk[q] = 0.0;
-        action1ofk[this.action_window[n-1-k]] = 1.0*this.num_states;
+        action1ofk[this.action_window[n-1-k]] = 1.0//*this.num_states;
         w = w.concat(action1ofk);
       }
       return w;
@@ -194,6 +194,7 @@ var cnnutil = require("./util");
         } else {
           // otherwise use our policy to make decision
           var maxact = this.policy(net_input);
+          // console.log('maxAct:', maxact);
           action = maxact.action;
        }
       } else {
