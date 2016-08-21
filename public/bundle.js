@@ -2788,7 +2788,7 @@ module.exports = function(dim) {
     //Houses the options for defining the deep learning Brain.
     var options = {
         epsilon_min: 0.05,
-        epsilon_test_time: 0.01,
+        epsilon_test_time: 0.01, //Set to 0 to be totally deterministic
         experience_size: 30000,
         gamma: 0.7,
         learning_steps_burnin: 3000,
