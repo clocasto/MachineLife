@@ -31,7 +31,7 @@ var Manager = function(dimension) {
     this.player = new Player(5);
 
     var Garden = gardener(dimension, this.player).Garden;
-    this.garden = new Garden(4);
+    this.garden = new Garden(1);
 
     var Brain = require('./neural');
     this.brain = Brain(this.size);
@@ -67,15 +67,21 @@ Manager.prototype.step = function() {
 Manager.prototype.moveBrain = function(direction) {
     this.movePlayer(37 + direction);
     var playerLoc = util.location(this.size, this.player.x, this.player.y);
+    var reward = 0;
     if (this.garden.hasPlant(playerLoc)) {
-        var reward = this.award(this.garden.trample(playerLoc));
-        this.brain.backward(reward);
-    } else {
-        var reward = -0.02;
-        this.brain.backward(reward);
+        reward = this.award(this.garden.trample(playerLoc));
+        this.wipePlants();
     }
-    // console.log(reward);
+    this.brain.backward(reward);
     this.player.reward += reward;
+};
+
+Manager.prototype.wipePlants = function() {
+    for (var plot in this.garden.plants) {
+        var plant = this.garden.plants[plot];
+        this.world.update(0, plant.x, plant.y);
+        this.garden.delete(plant.coordinate);
+    }
 };
 
 /**
@@ -134,7 +140,7 @@ Manager.prototype.harvest = function() {
     for (var plot in this.garden.plants) {
         if (this.garden.plants.hasOwnProperty(plot)) {
             var plant = this.garden.plants[plot];
-            if (plant.getAge() > 5) this.garden.delete(plant.coordinate);
+            if (!plant.getAge()) this.garden.delete(plant.coordinate);
             this.world.update(plant.getAge(), plant.x, plant.y);
         }
     }
@@ -164,7 +170,7 @@ Manager.prototype.observer = function() {
  * @return {undefined}
  */
 Manager.prototype.start = function() {
-    this.speed = 0.1;
+    this.speed = 1;
 
     setInterval(function() {
         // if (this.player.health-- > 0) this.step();

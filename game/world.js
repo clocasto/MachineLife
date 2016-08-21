@@ -40,7 +40,7 @@ module.exports = function(size) {
     World.prototype.update = function(value, x, y) {
         var coordinate = util.location(size, x, y);
         this.world[coordinate] = value;
-        // document.getElementById(coordinate).className = 'tile ' + String(this.manual[value]);
+        document.getElementById(coordinate).className = 'tile ' + String(this.manual[value]);
     };
 
     /**

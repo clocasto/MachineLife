@@ -8,28 +8,21 @@ module.exports = function(worldSize, player) {
      *
      *
      * The Plant Constructor.
-     * 1. Each plant is initialized on a random coordinate.
-     * 2. Each plant's location is accessible by x AND y properties or a '0'-padded string property, 'this.coordinate'.
+     * 1. Creates a plant which is of the specified age.
+     * 2. Each plant is initialized on a random coordinate.
+     * 3. Each plant's location is accessible by x AND y properties or a '0'-padded string property, 'this.coordinate'.
      * @param {Number}
      *
      *
      *
      */
-    function Plant() {
+    function Plant(age) {
         this.x = util.randNum(worldSize);
         this.y = util.randNum(worldSize);
         this.coordinate = util.location(worldSize, this.x, this.y);
-        this.age = 1;
+        this.age = age;
         // console.log('added plant');
     }
-
-    /**
-     * 1. Ages the current plant once. If this.plant's current age is five, however, the plant age is set to 0 as an indicator of plant death.
-     * @return {undefined}
-     */
-    Plant.prototype.ageOnce = function() {
-        this.age++;
-    };
 
     /**
      * 1. This object defines the CSS class, game value, and returned health of a plant (these are functions of plant age).
@@ -61,12 +54,15 @@ module.exports = function(worldSize, player) {
             worth: -5,
             health: -1,
             reward: -1
-        },
-        0: {
-            worth: 0,
-            health: 0,
-            reward: -0.05
         }
+    };
+
+    /**
+     * 1. Ages the current plant once. If this.plant's current age is five, however, the plant age is set to 0 as an indicator of plant death.
+     * @return {undefined}
+     */
+    Plant.prototype.ageOnce = function() {
+        this.age = this.age > 3 ? 0 : this.age + 2;
     };
 
     /**
@@ -114,6 +110,7 @@ module.exports = function(worldSize, player) {
      */
     function Garden(stepsToAge) {
         this.plants = {};
+        this.plantLimit = 2;
         this.stepsToAge = stepsToAge;
         this.tracker = 0; //Used in tandem with this.stepsToAge to manage plant aging frequency.
     }
@@ -127,9 +124,10 @@ module.exports = function(worldSize, player) {
         if (this.tracker < this.stepsToAge) {
             this.tracker++;
         } else {
+            if (Object.keys(this.plants).length >= this.plantLimit) return;
             this.tracker = 0;
-            this.addPlants(numberOfNewPlants);
             this.agePlants();
+            this.addPlants(numberOfNewPlants);
         }
 
     };
@@ -143,7 +141,7 @@ module.exports = function(worldSize, player) {
     Garden.prototype.addPlants = function(num) {
         //Adds 'num' number of plants to the garden
         for (var i = 0; i < num; i++) {
-            var plantToAdd = new Plant(worldSize);
+            var plantToAdd = new Plant(3); //Spawn an age 3 plant for reduced complexity.
 
             if (this.plants.hasOwnProperty(plantToAdd.coordinate) || util.location(worldSize, player.x, player.y) === plantToAdd.coordinate) {
                 return;

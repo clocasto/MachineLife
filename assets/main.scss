@@ -2,9 +2,6 @@
   box-sizing: border-box;   
 }
 
-@import "_layout";
-@import "_plants";
-
 $xs-screen: 360px;
 $small-screen: 768px;
 $med-screen: 992px;
@@ -52,4 +49,7 @@ body {
 	
 
 }
+
+@import "_layout";
+@import "_plants";
 
