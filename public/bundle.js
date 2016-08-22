@@ -2367,7 +2367,7 @@ var cnnutil = require("./util");
         // we dont want weight regularization to undervalue this information, as it only exists once
         var action1ofk = new Array(this.num_actions);
         for(var q=0;q<this.num_actions;q++) action1ofk[q] = 0.0;
-        action1ofk[this.action_window[n-1-k]] = 1.0*this.num_states;
+        action1ofk[this.action_window[n-1-k]] = 1.0//*this.num_states;
         w = w.concat(action1ofk);
       }
       return w;
@@ -2395,6 +2395,7 @@ var cnnutil = require("./util");
         } else {
           // otherwise use our policy to make decision
           var maxact = this.policy(net_input);
+          // console.log('maxAct:', maxact);
           action = maxact.action;
        }
       } else {
@@ -2592,8 +2593,8 @@ var Manager = function(dimension) {
     var World = creator(dimension);
     this.world = new World();
 
-    var Player = entities(dimension);
-    this.player = new Player(5);
+    this.playerConstructor = entities(dimension);
+    this.player = new this.playerConstructor(5);
 
     var Garden = gardener(dimension, this.player).Garden;
     this.garden = new Garden(1);
@@ -2601,6 +2602,13 @@ var Manager = function(dimension) {
     var Brain = require('./neural');
     this.brain = Brain(this.size);
 
+    this.status = true;
+    this.counter = 0;
+};
+
+Manager.prototype.initialize = function() {
+    this.player = new this.constructors.Player(5);
+    this.garden = new this.constructors.Garden(1);
 };
 
 /**
@@ -2613,7 +2621,7 @@ var Manager = function(dimension) {
  */
 Manager.prototype.step = function() {
     this.world.update(7, this.player.x, this.player.y);
-    this.garden.season(1);
+    this.garden.season(2);
     this.harvest();
 
     //Handling brain movement and scoring below.
@@ -2622,6 +2630,7 @@ Manager.prototype.step = function() {
     this.moveBrain(move);
     this.world.score(this.player.score, this.player.health, this.player.reds / this.brain.forward_passes, this.player.reward);
     this.brain.visSelf(document.getElementById('brainboard')); //Displays brain statistics.
+
 };
 
 /**
@@ -2632,13 +2641,15 @@ Manager.prototype.step = function() {
 Manager.prototype.moveBrain = function(direction) {
     this.movePlayer(37 + direction);
     var playerLoc = util.location(this.size, this.player.x, this.player.y);
-    var reward = 0;
+    var reward = -0.4;
     if (this.garden.hasPlant(playerLoc)) {
         reward = this.award(this.garden.trample(playerLoc));
-        this.wipePlants();
+        // this.wipePlants();
+        this.status = false;
+        console.log('New game starting...');
     }
     this.brain.backward(reward);
-    this.player.reward += reward;
+    console.log('Reward:', reward);
 };
 
 Manager.prototype.wipePlants = function() {
@@ -2668,16 +2679,18 @@ Manager.prototype.movePlayer = function(keyCode) {
  * @return {Array}
  */
 Manager.prototype.query = function() {
-    var returnArray = [], normVector;
+    var returnArray = [],
+        normVector;
     for (var i = 0; i < this.size; i++) {
         for (var j = 0; j < this.size; j++) {
             returnArray.push(this.world.world[util.location(this.size, i, j)]);
         }
     }
-    normVector = returnArray.reduce(function(startVal, nextVal){
-        return startVal + Math.pow(nextVal, 2);
-    });
-    returnArray = returnArray.map(ele => ele / Math.pow(normVector, 0.5));
+    // normVector = returnArray.reduce(function(startVal, nextVal){
+    //     return startVal + Math.pow(nextVal, 2);
+    // });
+    returnArray = returnArray.map(ele => ele / 10); //Math.pow(normVector, 0.5));
+    if (returnArray.includes(ele => ele > 1)) throw Error('Query > 1!');
     // console.log(returnArray);
     return returnArray;
 };
@@ -2737,14 +2750,23 @@ Manager.prototype.observer = function() {
 Manager.prototype.start = function() {
     this.speed = 1;
 
-    setInterval(function() {
+    this.interval = setInterval(function() {
         // if (this.player.health-- > 0) this.step();
         // else {
         //     this.quit();
         // }
         this.step();
-        if (this.brain.age > 8000) this.brain.learning = false;
+        if (this.brain.learning) {
 
+            if (this.brain.age > 200000) {
+                this.brain.learning = false;
+            }
+        }
+
+        if (!this.status) {
+            clearInterval(this.interval);
+            this.quit();
+        }
     }.bind(this), this.speed);
 
     // while (this.brain.age < 20000) {
@@ -2759,10 +2781,8 @@ Manager.prototype.start = function() {
  * @return {undefined}
  */
 Manager.prototype.quit = function() {
-    for (var plot in this.garden.plants) {
-        this.world.update(0, this.garden.plants[plot].x, this.garden.plants[plot].y);
-        this.garden.root(plot);
-    }
+    // clearInterval(this.interval);
+    this.start();
 };
 
 /**
@@ -2793,14 +2813,18 @@ module.exports = function(dim) {
 
     //Houses the options for defining the deep learning Brain.
     var options = {
-        epsilon_min: 0.05,
-        epsilon_test_time: 0.01, //Set to 0 to be totally deterministic
-        experience_size: 30000,
-        gamma: 0.7,
-        learning_steps_burnin: 3000,
-        learning_steps_total: 200000,
+        epsilon_min: 0.08,
+        epsilon_test_time: 0.08, //Set to 0 to be totally deterministic
+        experience_size: 500000,
+        gamma: 0.8,
+        learning_steps_burnin: 5000,
+        learning_steps_total: 2000000,
         start_learn_threshhold: 1000,
-        temporal_window: 1
+        temporal_window: 2,
+        tdtrainer_options: {
+            learning_rate: 0.01,
+            option: 'adagrad'
+        }
         // experience_size: 5000
     };
 
@@ -2899,7 +2923,7 @@ module.exports = function(worldSize, player) {
      * @return {undefined}
      */
     Plant.prototype.ageOnce = function() {
-        this.age = this.age > 3 ? 0 : this.age + 2;
+        // this.age = this.age > 3 ? 0 : this.age + 2;
     };
 
     /**
@@ -2947,7 +2971,7 @@ module.exports = function(worldSize, player) {
      */
     function Garden(stepsToAge) {
         this.plants = {};
-        this.plantLimit = 2;
+        this.plantLimit = 1;
         this.stepsToAge = stepsToAge;
         this.tracker = 0; //Used in tandem with this.stepsToAge to manage plant aging frequency.
     }

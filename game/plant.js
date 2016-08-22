@@ -62,7 +62,7 @@ module.exports = function(worldSize, player) {
      * @return {undefined}
      */
     Plant.prototype.ageOnce = function() {
-        this.age = this.age > 3 ? 0 : this.age + 2;
+        // this.age = this.age > 3 ? 0 : this.age + 2;
     };
 
     /**
@@ -110,7 +110,7 @@ module.exports = function(worldSize, player) {
      */
     function Garden(stepsToAge) {
         this.plants = {};
-        this.plantLimit = 2;
+        this.plantLimit = 1;
         this.stepsToAge = stepsToAge;
         this.tracker = 0; //Used in tandem with this.stepsToAge to manage plant aging frequency.
     }

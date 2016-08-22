@@ -27,8 +27,8 @@ var Manager = function(dimension) {
     var World = creator(dimension);
     this.world = new World();
 
-    var Player = entities(dimension);
-    this.player = new Player(5);
+    this.playerConstructor = entities(dimension);
+    this.player = new this.playerConstructor(5);
 
     var Garden = gardener(dimension, this.player).Garden;
     this.garden = new Garden(1);
@@ -36,6 +36,13 @@ var Manager = function(dimension) {
     var Brain = require('./neural');
     this.brain = Brain(this.size);
 
+    this.status = true;
+    this.counter = 0;
+};
+
+Manager.prototype.initialize = function() {
+    this.player = new this.constructors.Player(5);
+    this.garden = new this.constructors.Garden(1);
 };
 
 /**
@@ -48,7 +55,7 @@ var Manager = function(dimension) {
  */
 Manager.prototype.step = function() {
     this.world.update(7, this.player.x, this.player.y);
-    this.garden.season(1);
+    this.garden.season(2);
     this.harvest();
 
     //Handling brain movement and scoring below.
@@ -57,6 +64,7 @@ Manager.prototype.step = function() {
     this.moveBrain(move);
     this.world.score(this.player.score, this.player.health, this.player.reds / this.brain.forward_passes, this.player.reward);
     this.brain.visSelf(document.getElementById('brainboard')); //Displays brain statistics.
+
 };
 
 /**
@@ -67,13 +75,15 @@ Manager.prototype.step = function() {
 Manager.prototype.moveBrain = function(direction) {
     this.movePlayer(37 + direction);
     var playerLoc = util.location(this.size, this.player.x, this.player.y);
-    var reward = 0;
+    var reward = -0.4;
     if (this.garden.hasPlant(playerLoc)) {
         reward = this.award(this.garden.trample(playerLoc));
-        this.wipePlants();
+        // this.wipePlants();
+        this.status = false;
+        console.log('New game starting...');
     }
     this.brain.backward(reward);
-    this.player.reward += reward;
+    // console.log('Reward:', reward);
 };
 
 Manager.prototype.wipePlants = function() {
@@ -103,16 +113,18 @@ Manager.prototype.movePlayer = function(keyCode) {
  * @return {Array}
  */
 Manager.prototype.query = function() {
-    var returnArray = [], normVector;
+    var returnArray = [],
+        normVector;
     for (var i = 0; i < this.size; i++) {
         for (var j = 0; j < this.size; j++) {
             returnArray.push(this.world.world[util.location(this.size, i, j)]);
         }
     }
-    normVector = returnArray.reduce(function(startVal, nextVal){
-        return startVal + Math.pow(nextVal, 2);
-    });
-    returnArray = returnArray.map(ele => ele / Math.pow(normVector, 0.5));
+    // normVector = returnArray.reduce(function(startVal, nextVal){
+    //     return startVal + Math.pow(nextVal, 2);
+    // });
+    returnArray = returnArray.map(ele => ele / 10); //Math.pow(normVector, 0.5));
+    if (returnArray.includes(ele => ele > 1)) throw Error('Query > 1!');
     // console.log(returnArray);
     return returnArray;
 };
@@ -172,14 +184,23 @@ Manager.prototype.observer = function() {
 Manager.prototype.start = function() {
     this.speed = 1;
 
-    setInterval(function() {
+    this.interval = setInterval(function() {
         // if (this.player.health-- > 0) this.step();
         // else {
         //     this.quit();
         // }
         this.step();
-        if (this.brain.age > 8000) this.brain.learning = false;
+        if (this.brain.learning) {
 
+            if (this.brain.age > 200000) {
+                this.brain.learning = false;
+            }
+        }
+
+        if (!this.status) {
+            clearInterval(this.interval);
+            this.quit();
+        }
     }.bind(this), this.speed);
 
     // while (this.brain.age < 20000) {
@@ -194,10 +215,8 @@ Manager.prototype.start = function() {
  * @return {undefined}
  */
 Manager.prototype.quit = function() {
-    for (var plot in this.garden.plants) {
-        this.world.update(0, this.garden.plants[plot].x, this.garden.plants[plot].y);
-        this.garden.root(plot);
-    }
+    // clearInterval(this.interval);
+    this.start();
 };
 
 /**
